@@ -39,6 +39,20 @@ internal static class EmissionPlanner
                 .Sites.FirstOrDefault(s => s.MemberName == member.Name)
                 ?.Location;
 
+            if (System.Array.IndexOf(TypedViewEmitter.ReservedMemberNames, member.Name) >= 0)
+            {
+                diagnostics.Add(
+                    DiagnosticInfo.Create(
+                        DiagnosticDescriptors.ReservedMemberName,
+                        site,
+                        member.Name,
+                        model.Name,
+                        model.Name + "ArrowView"
+                    )
+                );
+                continue;
+            }
+
             if (
                 !TryResolveDecimal(
                     member,

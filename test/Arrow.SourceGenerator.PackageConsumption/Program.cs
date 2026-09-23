@@ -19,6 +19,12 @@ if (batch.Length != 1 || !batch.Column(1).IsNull(0))
     return 1;
 }
 
+if (ConsumerOrderArrow.View(batch).Id.GetValue(0) != 7)
+{
+    Console.Error.WriteLine("Unexpected View output");
+    return 1;
+}
+
 ConsumerOrder[] read = ConsumerOrderArrow.FromRecordBatch(batch);
 if (read is not [{ Id: 7, Customer: null }])
 {
@@ -27,7 +33,7 @@ if (read is not [{ Id: 7, Customer: null }])
 }
 
 Console.WriteLine(
-    $"Arrow.SourceGenerator package consumption: schema ({string.Join(", ", fields)}) write and read OK"
+    $"Arrow.SourceGenerator package consumption: schema ({string.Join(", ", fields)}) write, read and view OK"
 );
 return 0;
 

@@ -39,6 +39,8 @@ internal static class ArrowEmitter
         }
 
         EmitCompanion(writer, context);
+        writer.Line();
+        TypedViewEmitter.EmitViewType(writer, context);
 
         for (int i = containers.Length - 1; i >= 0; i--)
         {
@@ -68,6 +70,8 @@ internal static class ArrowEmitter
             ToRecordBatchEmitter.Emit(writer, context);
             writer.Line();
             FromRecordBatchEmitter.Emit(writer, context);
+            writer.Line();
+            TypedViewEmitter.EmitFactory(writer, context);
             writer.Line();
             HelperEmitter.Emit(writer, context);
         }

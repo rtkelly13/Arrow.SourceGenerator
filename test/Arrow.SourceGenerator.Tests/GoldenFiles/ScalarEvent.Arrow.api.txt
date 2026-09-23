@@ -1,7 +1,38 @@
 #nullable enable
+Golden.Events.ScalarEventArrowView.Amount.get -> Apache.Arrow.Decimal128Array
+Golden.Events.ScalarEventArrowView.At.get -> Apache.Arrow.Time64Array
+Golden.Events.ScalarEventArrowView.Batch.get -> Apache.Arrow.RecordBatch
+Golden.Events.ScalarEventArrowView.CorrelationId.get -> Apache.Arrow.Arrays.FixedSizeBinaryArray
+Golden.Events.ScalarEventArrowView.Count.get -> Apache.Arrow.Int32Array
+Golden.Events.ScalarEventArrowView.Day.get -> Apache.Arrow.Date32Array
+Golden.Events.ScalarEventArrowView.Elapsed.get -> Apache.Arrow.DurationArray
+Golden.Events.ScalarEventArrowView.Flag.get -> Apache.Arrow.BooleanArray
+Golden.Events.ScalarEventArrowView.Id.get -> Apache.Arrow.Int64Array
+Golden.Events.ScalarEventArrowView.Length.get -> int
+Golden.Events.ScalarEventArrowView.LocalWallClock.get -> Apache.Arrow.TimestampArray
+Golden.Events.ScalarEventArrowView.MaybeCorrelationId.get -> Apache.Arrow.Arrays.FixedSizeBinaryArray
+Golden.Events.ScalarEventArrowView.MaybeCount.get -> Apache.Arrow.Int32Array
+Golden.Events.ScalarEventArrowView.MaybeOccurredAt.get -> Apache.Arrow.TimestampArray
+Golden.Events.ScalarEventArrowView.MaybePriority.get -> Apache.Arrow.UInt8Array
+Golden.Events.ScalarEventArrowView.Name.get -> Apache.Arrow.StringArray
+Golden.Events.ScalarEventArrowView.Note.get -> Apache.Arrow.StringArray
+Golden.Events.ScalarEventArrowView.OccurredAt.get -> Apache.Arrow.TimestampArray
+Golden.Events.ScalarEventArrowView.OptionalPayload.get -> Apache.Arrow.BinaryArray
+Golden.Events.ScalarEventArrowView.Payload.get -> Apache.Arrow.BinaryArray
+Golden.Events.ScalarEventArrowView.Priority.get -> Apache.Arrow.UInt8Array
+Golden.Events.ScalarEventArrowView.Ratio.get -> Apache.Arrow.FloatArray
+Golden.Events.ScalarEventArrowView.Score.get -> Apache.Arrow.DoubleArray
+Golden.Events.ScalarEventArrowView.Small.get -> Apache.Arrow.Int16Array
+Golden.Events.ScalarEventArrowView.Tiny.get -> Apache.Arrow.Int8Array
+Golden.Events.ScalarEventArrowView.UnsignedCount.get -> Apache.Arrow.UInt32Array
+Golden.Events.ScalarEventArrowView.UnsignedId.get -> Apache.Arrow.UInt64Array
+Golden.Events.ScalarEventArrowView.UnsignedSmall.get -> Apache.Arrow.UInt16Array
+Golden.Events.ScalarEventArrowView.UnsignedTiny.get -> Apache.Arrow.UInt8Array
+sealed Golden.Events.ScalarEventArrowView
 static Golden.Events.ScalarEventArrow
 static Golden.Events.ScalarEventArrow.FromRecordBatch(Apache.Arrow.RecordBatch batch) -> Golden.Events.ScalarEvent[]
 static Golden.Events.ScalarEventArrow.FromRecordBatches(System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch> batches) -> System.Collections.Generic.IEnumerable<Golden.Events.ScalarEvent>
 static Golden.Events.ScalarEventArrow.Schema.get -> Apache.Arrow.Schema
 static Golden.Events.ScalarEventArrow.ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Golden.Events.ScalarEvent> rows) -> Apache.Arrow.RecordBatch
 static Golden.Events.ScalarEventArrow.ToRecordBatches(System.Collections.Generic.IEnumerable<Golden.Events.ScalarEvent> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>
+static Golden.Events.ScalarEventArrow.View(Apache.Arrow.RecordBatch batch) -> ScalarEventArrowView

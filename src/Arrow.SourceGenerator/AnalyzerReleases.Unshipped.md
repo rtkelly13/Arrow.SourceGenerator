@@ -19,3 +19,4 @@ ARROW016 | Arrow.SourceGenerator | Warning | Public field is not mapped
 ARROW018 | Arrow.SourceGenerator | Error | Required member is not mapped
 ARROW019 | Arrow.SourceGenerator | Error | Ambiguous constructor
 ARROW020 | Arrow.SourceGenerator | Error | Apache.Arrow is not referenced
+ARROW021 | Arrow.SourceGenerator | Error | Member name is reserved by the generated view

@@ -167,27 +167,30 @@ internal static class TargetParser
         }
 
         ISymbol scope = (ISymbol?)type.ContainingType ?? type.ContainingNamespace;
-        string companion = type.Name + "Arrow";
-        // Only a non-generic declaration can conflict: C# lets OrderArrow and OrderArrow<T> share a
-        // declaration space, so a generic namesake is no collision with the arity-zero companion.
-        IEnumerable<ISymbol> namesakes = scope switch
+        foreach (string generated in new[] { type.Name + "Arrow", type.Name + "ArrowView" })
         {
-            INamespaceSymbol ns => ns.GetMembers(companion),
-            INamedTypeSymbol owner => owner.GetMembers(companion),
-            _ => Enumerable.Empty<ISymbol>(),
-        };
-        bool taken = namesakes.Any(symbol => symbol is not INamedTypeSymbol { Arity: > 0 });
-        if (taken)
-        {
-            diagnostics.Add(
-                DiagnosticInfo.Create(
-                    DiagnosticDescriptors.CompanionNameCollision,
-                    location,
-                    type.Name,
-                    companion
-                )
-            );
-            return false;
+            // Only a non-generic declaration can conflict: C# lets OrderArrow and OrderArrow<T>
+            // share a declaration space, so a generic namesake is no collision with the arity-zero
+            // generated type.
+            IEnumerable<ISymbol> namesakes = scope switch
+            {
+                INamespaceSymbol ns => ns.GetMembers(generated),
+                INamedTypeSymbol owner => owner.GetMembers(generated),
+                _ => Enumerable.Empty<ISymbol>(),
+            };
+            bool taken = namesakes.Any(symbol => symbol is not INamedTypeSymbol { Arity: > 0 });
+            if (taken)
+            {
+                diagnostics.Add(
+                    DiagnosticInfo.Create(
+                        DiagnosticDescriptors.CompanionNameCollision,
+                        location,
+                        type.Name,
+                        generated
+                    )
+                );
+                return false;
+            }
         }
 
         return true;

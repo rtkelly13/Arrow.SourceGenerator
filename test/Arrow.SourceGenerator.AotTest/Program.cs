@@ -19,6 +19,7 @@ internal static class Program
         GeneratedSchemaMatchesTheModel();
         GeneratedWritePathSurvivesIpc();
         GeneratedReadPathRoundTripsAndValidates();
+        GeneratedViewIsValidatedAndZeroCopy();
 
         Console.WriteLine($"Arrow.SourceGenerator AOT checks passed: {_checks}");
         return 0;
@@ -137,6 +138,16 @@ internal static class Program
         }
 
         Check(rejected, "read validation rejects a mismatched batch");
+    }
+
+    private static void GeneratedViewIsValidatedAndZeroCopy()
+    {
+        using RecordBatch batch = AotOrderArrow.ToRecordBatch(SampleOrders());
+        AotOrderArrowView view = AotOrderArrow.View(batch);
+        Check(view.Length == 2, "view length");
+        Check(ReferenceEquals(view.Id, batch.Column(0)), "view is zero-copy");
+        Check(view.Customer.GetString(1) == "grace", "view utf8");
+        Check(view.Total.GetValue(0) == 12.3456m, "view decimal");
     }
 
     internal static RecordBatch IpcRoundTrip(RecordBatch batch)

@@ -42,6 +42,16 @@ does not claim otherwise. What it guarantees:
 - **Models own their data.** Strings are decoded into new `string`s and binary values are copied
   into new `byte[]`s, so no model aliases Arrow memory and disposing the batch cannot affect them.
 
+### `View` — view-only zero-copy
+
+- **Validated once, then zero-copy.** `View(batch)` runs the reader's full validation and hands out
+  the batch's own array objects; no value, offset or validity buffer is copied.
+- **The view owns nothing.** It is valid exactly as long as the batch is: disposing the batch
+  invalidates the view's arrays just as it invalidates arrays taken from the batch directly. The
+  view does not dispose the batch and does not extend its lifetime.
+- **Read-only.** The view exposes Apache.Arrow arrays, whose public API is read-only; no writable
+  span over Arrow memory is created.
+
 ## Not yet present
 
 No generated path hands out borrowed or pooled memory, and none will until its lifetime rule is

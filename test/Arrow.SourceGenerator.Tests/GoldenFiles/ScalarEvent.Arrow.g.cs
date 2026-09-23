@@ -1250,6 +1250,20 @@ namespace Golden.Events
             return ordinals;
         }
 
+        /// <summary>
+        /// Validates <paramref name="batch"/> against <see cref="global::Golden.Events.ScalarEvent"/>'s <see cref="Schema"/>,
+        /// exactly as <see cref="FromRecordBatch"/> does, and returns a typed view over it without
+        /// copying. The view is valid for as long as the batch is.
+        /// </summary>
+        /// <param name="batch">The batch. It is not retained beyond the view, nor disposed.</param>
+        /// <exception cref="global::System.IO.InvalidDataException">The batch does not match.</exception>
+        public static ScalarEventArrowView View(global::Apache.Arrow.RecordBatch batch)
+        {
+            if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+            int[] ordinals = ResolveColumns(batch);
+            return new ScalarEventArrowView(batch, (global::Apache.Arrow.BooleanArray)batch.Column(ordinals[0]), (global::Apache.Arrow.Int8Array)batch.Column(ordinals[1]), (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[2]), (global::Apache.Arrow.Int16Array)batch.Column(ordinals[3]), (global::Apache.Arrow.UInt16Array)batch.Column(ordinals[4]), (global::Apache.Arrow.Int32Array)batch.Column(ordinals[5]), (global::Apache.Arrow.UInt32Array)batch.Column(ordinals[6]), (global::Apache.Arrow.Int64Array)batch.Column(ordinals[7]), (global::Apache.Arrow.UInt64Array)batch.Column(ordinals[8]), (global::Apache.Arrow.FloatArray)batch.Column(ordinals[9]), (global::Apache.Arrow.DoubleArray)batch.Column(ordinals[10]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[11]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[12]), (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[13]), (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[14]), (global::Apache.Arrow.Decimal128Array)batch.Column(ordinals[15]), (global::Apache.Arrow.Date32Array)batch.Column(ordinals[16]), (global::Apache.Arrow.Time64Array)batch.Column(ordinals[17]), (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[18]), (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[19]), (global::Apache.Arrow.DurationArray)batch.Column(ordinals[20]), (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[21]), (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[22]), (global::Apache.Arrow.Int32Array)batch.Column(ordinals[23]), (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[24]), (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[25]), (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[26]));
+        }
+
         // DateOnly.DayNumber of 1970-01-01, the Date32 epoch.
         private const int UnixEpochDayNumber = 719162;
 
@@ -1451,5 +1465,132 @@ namespace Golden.Events
             global::System.MemoryExtensions.Reverse(bytes.Slice(6, 2));
             return new global::System.Guid(bytes);
         }
+    }
+
+    /// <summary>
+    /// A validated, strongly typed view over a <c>RecordBatch</c> of <see cref="global::Golden.Events.ScalarEvent"/>:
+    /// one Apache.Arrow array per field, resolved once, with no copy. Obtain one from
+    /// <see cref="ScalarEventArrow.View"/>. It does not own the batch.
+    /// </summary>
+    public sealed partial class ScalarEventArrowView
+    {
+        internal ScalarEventArrowView(global::Apache.Arrow.RecordBatch batch, global::Apache.Arrow.BooleanArray column0, global::Apache.Arrow.Int8Array column1, global::Apache.Arrow.UInt8Array column2, global::Apache.Arrow.Int16Array column3, global::Apache.Arrow.UInt16Array column4, global::Apache.Arrow.Int32Array column5, global::Apache.Arrow.UInt32Array column6, global::Apache.Arrow.Int64Array column7, global::Apache.Arrow.UInt64Array column8, global::Apache.Arrow.FloatArray column9, global::Apache.Arrow.DoubleArray column10, global::Apache.Arrow.StringArray column11, global::Apache.Arrow.StringArray column12, global::Apache.Arrow.BinaryArray column13, global::Apache.Arrow.BinaryArray column14, global::Apache.Arrow.Decimal128Array column15, global::Apache.Arrow.Date32Array column16, global::Apache.Arrow.Time64Array column17, global::Apache.Arrow.TimestampArray column18, global::Apache.Arrow.TimestampArray column19, global::Apache.Arrow.DurationArray column20, global::Apache.Arrow.Arrays.FixedSizeBinaryArray column21, global::Apache.Arrow.UInt8Array column22, global::Apache.Arrow.Int32Array column23, global::Apache.Arrow.Arrays.FixedSizeBinaryArray column24, global::Apache.Arrow.TimestampArray column25, global::Apache.Arrow.UInt8Array column26)
+        {
+            Batch = batch;
+            Flag = column0;
+            Tiny = column1;
+            UnsignedTiny = column2;
+            Small = column3;
+            UnsignedSmall = column4;
+            Count = column5;
+            UnsignedCount = column6;
+            Id = column7;
+            UnsignedId = column8;
+            Ratio = column9;
+            Score = column10;
+            Name = column11;
+            Note = column12;
+            Payload = column13;
+            OptionalPayload = column14;
+            Amount = column15;
+            Day = column16;
+            At = column17;
+            LocalWallClock = column18;
+            OccurredAt = column19;
+            Elapsed = column20;
+            CorrelationId = column21;
+            Priority = column22;
+            MaybeCount = column23;
+            MaybeCorrelationId = column24;
+            MaybeOccurredAt = column25;
+            MaybePriority = column26;
+        }
+
+        /// <summary>The batch this view reads.</summary>
+        public global::Apache.Arrow.RecordBatch Batch { get; }
+
+        /// <summary>The number of rows.</summary>
+        public int Length => Batch.Length;
+
+        /// <summary>Arrow field <c>Flag</c> (Boolean).</summary>
+        public global::Apache.Arrow.BooleanArray Flag { get; }
+
+        /// <summary>Arrow field <c>Tiny</c> (Int8).</summary>
+        public global::Apache.Arrow.Int8Array Tiny { get; }
+
+        /// <summary>Arrow field <c>UnsignedTiny</c> (UInt8).</summary>
+        public global::Apache.Arrow.UInt8Array UnsignedTiny { get; }
+
+        /// <summary>Arrow field <c>Small</c> (Int16).</summary>
+        public global::Apache.Arrow.Int16Array Small { get; }
+
+        /// <summary>Arrow field <c>UnsignedSmall</c> (UInt16).</summary>
+        public global::Apache.Arrow.UInt16Array UnsignedSmall { get; }
+
+        /// <summary>Arrow field <c>Count</c> (Int32).</summary>
+        public global::Apache.Arrow.Int32Array Count { get; }
+
+        /// <summary>Arrow field <c>UnsignedCount</c> (UInt32).</summary>
+        public global::Apache.Arrow.UInt32Array UnsignedCount { get; }
+
+        /// <summary>Arrow field <c>Id</c> (Int64).</summary>
+        public global::Apache.Arrow.Int64Array Id { get; }
+
+        /// <summary>Arrow field <c>UnsignedId</c> (UInt64).</summary>
+        public global::Apache.Arrow.UInt64Array UnsignedId { get; }
+
+        /// <summary>Arrow field <c>Ratio</c> (Float).</summary>
+        public global::Apache.Arrow.FloatArray Ratio { get; }
+
+        /// <summary>Arrow field <c>Score</c> (Double).</summary>
+        public global::Apache.Arrow.DoubleArray Score { get; }
+
+        /// <summary>Arrow field <c>Name</c> (Utf8).</summary>
+        public global::Apache.Arrow.StringArray Name { get; }
+
+        /// <summary>Arrow field <c>Note</c> (Utf8, nullable).</summary>
+        public global::Apache.Arrow.StringArray Note { get; }
+
+        /// <summary>Arrow field <c>Payload</c> (Binary).</summary>
+        public global::Apache.Arrow.BinaryArray Payload { get; }
+
+        /// <summary>Arrow field <c>OptionalPayload</c> (Binary, nullable).</summary>
+        public global::Apache.Arrow.BinaryArray OptionalPayload { get; }
+
+        /// <summary>Arrow field <c>Amount</c> (Decimal128(38, 18)).</summary>
+        public global::Apache.Arrow.Decimal128Array Amount { get; }
+
+        /// <summary>Arrow field <c>Day</c> (Date32).</summary>
+        public global::Apache.Arrow.Date32Array Day { get; }
+
+        /// <summary>Arrow field <c>At</c> (Time64(Microsecond)).</summary>
+        public global::Apache.Arrow.Time64Array At { get; }
+
+        /// <summary>Arrow field <c>LocalWallClock</c> (Timestamp(Microsecond, no timezone)).</summary>
+        public global::Apache.Arrow.TimestampArray LocalWallClock { get; }
+
+        /// <summary>Arrow field <c>OccurredAt</c> (Timestamp(Microsecond, with timezone)).</summary>
+        public global::Apache.Arrow.TimestampArray OccurredAt { get; }
+
+        /// <summary>Arrow field <c>Elapsed</c> (Duration(Microsecond)).</summary>
+        public global::Apache.Arrow.DurationArray Elapsed { get; }
+
+        /// <summary>Arrow field <c>CorrelationId</c> (FixedSizeBinary(16)).</summary>
+        public global::Apache.Arrow.Arrays.FixedSizeBinaryArray CorrelationId { get; }
+
+        /// <summary>Arrow field <c>Priority</c> (UInt8).</summary>
+        public global::Apache.Arrow.UInt8Array Priority { get; }
+
+        /// <summary>Arrow field <c>MaybeCount</c> (Int32, nullable).</summary>
+        public global::Apache.Arrow.Int32Array MaybeCount { get; }
+
+        /// <summary>Arrow field <c>MaybeCorrelationId</c> (FixedSizeBinary(16), nullable).</summary>
+        public global::Apache.Arrow.Arrays.FixedSizeBinaryArray MaybeCorrelationId { get; }
+
+        /// <summary>Arrow field <c>MaybeOccurredAt</c> (Timestamp(Microsecond, with timezone), nullable).</summary>
+        public global::Apache.Arrow.TimestampArray MaybeOccurredAt { get; }
+
+        /// <summary>Arrow field <c>MaybePriority</c> (UInt8, nullable).</summary>
+        public global::Apache.Arrow.UInt8Array MaybePriority { get; }
     }
 }

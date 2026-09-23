@@ -23,6 +23,17 @@ public sealed partial class ApiBudgetTests
         "static Schema.get -> Apache.Arrow.Schema",
         "static ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Model> rows) -> Apache.Arrow.RecordBatch",
         "static ToRecordBatches(System.Collections.Generic.IEnumerable<Model> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>",
+        "static View(Apache.Arrow.RecordBatch batch) -> ModelArrowView",
+    ];
+
+    /// <summary>
+    /// The view's fixed members. Beyond these it has exactly one property per field — the one
+    /// place field count legitimately shapes the surface (docs/00-DESIGN-GOALS.md section 8).
+    /// </summary>
+    private static readonly string[] ViewFixedMembers =
+    [
+        "ModelArrowView.Batch.get -> Apache.Arrow.RecordBatch",
+        "ModelArrowView.Length.get -> int",
     ];
 
     private static IReadOnlyList<string> Surface(string members)
@@ -51,6 +62,32 @@ public sealed partial class ApiBudgetTests
             .Select(Normalize)
             .Where(line => line.StartsWith("static ", StringComparison.Ordinal))
             .ShouldBe(CompanionOperations, ignoreOrder: true);
+    }
+
+    [Fact]
+    public void ViewExposesItsFixedMembersPlusOneArrayPerFieldAndNoConstructor()
+    {
+        IReadOnlyList<string> surface = Surface(
+            "public int A { get; set; } public string? B { get; set; }"
+        );
+
+        var view = surface
+            .Where(line =>
+                line.StartsWith("Demo.ModelArrowView", StringComparison.Ordinal)
+                || line.EndsWith("Demo.ModelArrowView", StringComparison.Ordinal)
+            )
+            .Select(line => line.Replace("Demo.", "", StringComparison.Ordinal))
+            .ToList();
+
+        view.ShouldBe(
+            [
+                "ModelArrowView.A.get -> Apache.Arrow.Int32Array",
+                "ModelArrowView.B.get -> Apache.Arrow.StringArray",
+                .. ViewFixedMembers,
+                "sealed ModelArrowView",
+            ],
+            ignoreOrder: true
+        );
     }
 
     [Fact]

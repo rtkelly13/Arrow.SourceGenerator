@@ -275,6 +275,20 @@ namespace Golden.@namespace
                 return ordinals;
             }
 
+            /// <summary>
+            /// Validates <paramref name="batch"/> against <see cref="global::Golden.@namespace.Outer.KeywordAndEscaping"/>'s <see cref="Schema"/>,
+            /// exactly as <see cref="FromRecordBatch"/> does, and returns a typed view over it without
+            /// copying. The view is valid for as long as the batch is.
+            /// </summary>
+            /// <param name="batch">The batch. It is not retained beyond the view, nor disposed.</param>
+            /// <exception cref="global::System.IO.InvalidDataException">The batch does not match.</exception>
+            public static KeywordAndEscapingArrowView View(global::Apache.Arrow.RecordBatch batch)
+            {
+                if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+                int[] ordinals = ResolveColumns(batch);
+                return new KeywordAndEscapingArrowView(batch, (global::Apache.Arrow.Int32Array)batch.Column(ordinals[0]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[1]), (global::Apache.Arrow.Int64Array)batch.Column(ordinals[2]));
+            }
+
             [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
             private static void ThrowCollectionChanged()
             {
@@ -379,6 +393,37 @@ namespace Golden.@namespace
             {
                 return new global::System.IO.InvalidDataException("Row " + row + ": the value in Arrow field '" + field + "' is outside the range of " + clrType + ".", inner);
             }
+        }
+
+        /// <summary>
+        /// A validated, strongly typed view over a <c>RecordBatch</c> of <see cref="global::Golden.@namespace.Outer.KeywordAndEscaping"/>:
+        /// one Apache.Arrow array per field, resolved once, with no copy. Obtain one from
+        /// <see cref="KeywordAndEscapingArrow.View"/>. It does not own the batch.
+        /// </summary>
+        public sealed partial class KeywordAndEscapingArrowView
+        {
+            internal KeywordAndEscapingArrowView(global::Apache.Arrow.RecordBatch batch, global::Apache.Arrow.Int32Array column0, global::Apache.Arrow.StringArray column1, global::Apache.Arrow.Int64Array column2)
+            {
+                Batch = batch;
+                @class = column0;
+                @event = column1;
+                Plain = column2;
+            }
+
+            /// <summary>The batch this view reads.</summary>
+            public global::Apache.Arrow.RecordBatch Batch { get; }
+
+            /// <summary>The number of rows.</summary>
+            public int Length => Batch.Length;
+
+            /// <summary>Arrow field <c>quote&quot;back\slash</c> (Int32).</summary>
+            public global::Apache.Arrow.Int32Array @class { get; }
+
+            /// <summary>Arrow field <c>new line &lt;xml&gt; &amp; */</c> (Utf8, nullable).</summary>
+            public global::Apache.Arrow.StringArray @event { get; }
+
+            /// <summary>Arrow field <c>unicode-é-中</c> (Int64).</summary>
+            public global::Apache.Arrow.Int64Array Plain { get; }
         }
     }
 }
