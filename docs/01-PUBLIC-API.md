@@ -26,6 +26,9 @@ For `[ArrowSerializable] partial class Order`, the generator emits one companion
 public static partial class OrderArrow
 {
     public static Apache.Arrow.Schema Schema { get; }
+
+    public static Apache.Arrow.RecordBatch ToRecordBatch(IReadOnlyCollection<Order> rows);
+    public static IEnumerable<Apache.Arrow.RecordBatch> ToRecordBatches(IEnumerable<Order> rows, int batchSize);
 }
 ```
 
@@ -39,6 +42,8 @@ The companion exposes a fixed set of operations that does **not** grow with the 
 | Member | Since |
 | --- | --- |
 | `Schema` | Foundation 2 |
+| `ToRecordBatch(IReadOnlyCollection<T>)` | Foundation 3 |
+| `ToRecordBatches(IEnumerable<T>, int)` | Foundation 3 |
 
 Rules enforced by `ApiBudgetTests`:
 

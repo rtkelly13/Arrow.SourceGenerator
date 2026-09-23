@@ -49,5 +49,692 @@ namespace Golden.Events
             };
             return new global::Apache.Arrow.Schema(fields, null);
         }
+
+        /// <summary>
+        /// Converts <paramref name="rows"/> into one <c>RecordBatch</c> with <see cref="global::Golden.Events.ScalarEvent"/>'s
+        /// <see cref="Schema"/>. An empty collection produces a valid zero-length batch.
+        /// </summary>
+        /// <param name="rows">The rows. Enumerated once per field; must not change meanwhile.</param>
+        /// <returns>A new batch that owns its buffers; the caller disposes it.</returns>
+        /// <exception cref="global::System.ArgumentException">A row is null, a non-nullable
+        /// reference member is null, or a value does not fit its Arrow type.</exception>
+        /// <exception cref="global::System.InvalidOperationException">The collection changed while
+        /// it was being converted.</exception>
+        public static global::Apache.Arrow.RecordBatch ToRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows)
+        {
+            if (rows is null) throw new global::System.ArgumentNullException(nameof(rows));
+            return BuildRecordBatch(rows, rows.Count);
+        }
+
+        /// <summary>
+        /// Converts a sequence of <see cref="global::Golden.Events.ScalarEvent"/> into consecutive batches of at most
+        /// <paramref name="batchSize"/> rows. Lazy: each batch is built as it is requested, and
+        /// an empty sequence yields no batches.
+        /// </summary>
+        /// <param name="rows">The rows, enumerated once.</param>
+        /// <param name="batchSize">The maximum rows per batch; at least 1.</param>
+        /// <returns>Batches the caller owns and disposes.</returns>
+        public static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatches(global::System.Collections.Generic.IEnumerable<global::Golden.Events.ScalarEvent> rows, int batchSize)
+        {
+            if (rows is null) throw new global::System.ArgumentNullException(nameof(rows));
+            if (batchSize < 1) throw new global::System.ArgumentOutOfRangeException(nameof(batchSize), batchSize, "batchSize must be at least 1.");
+            return ToRecordBatchesIterator(rows, batchSize);
+        }
+
+        private static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Golden.Events.ScalarEvent> rows, int batchSize)
+        {
+            var chunk = new global::System.Collections.Generic.List<global::Golden.Events.ScalarEvent>(global::System.Math.Min(batchSize, 1024));
+            foreach (var row in rows)
+            {
+                chunk.Add(row);
+                if (chunk.Count == batchSize)
+                {
+                    yield return BuildRecordBatch(chunk, chunk.Count);
+                    chunk.Clear();
+                }
+            }
+            if (chunk.Count > 0)
+            {
+                yield return BuildRecordBatch(chunk, chunk.Count);
+            }
+        }
+
+        private static global::Apache.Arrow.RecordBatch BuildRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var columns = new global::Apache.Arrow.IArrowArray[27];
+            columns[0] = BuildColumn_Flag(rows, count);
+            columns[1] = BuildColumn_Tiny(rows, count);
+            columns[2] = BuildColumn_UnsignedTiny(rows, count);
+            columns[3] = BuildColumn_Small(rows, count);
+            columns[4] = BuildColumn_UnsignedSmall(rows, count);
+            columns[5] = BuildColumn_Count(rows, count);
+            columns[6] = BuildColumn_UnsignedCount(rows, count);
+            columns[7] = BuildColumn_Id(rows, count);
+            columns[8] = BuildColumn_UnsignedId(rows, count);
+            columns[9] = BuildColumn_Ratio(rows, count);
+            columns[10] = BuildColumn_Score(rows, count);
+            columns[11] = BuildColumn_Name(rows, count);
+            columns[12] = BuildColumn_Note(rows, count);
+            columns[13] = BuildColumn_Payload(rows, count);
+            columns[14] = BuildColumn_OptionalPayload(rows, count);
+            columns[15] = BuildColumn_Amount(rows, count);
+            columns[16] = BuildColumn_Day(rows, count);
+            columns[17] = BuildColumn_At(rows, count);
+            columns[18] = BuildColumn_LocalWallClock(rows, count);
+            columns[19] = BuildColumn_OccurredAt(rows, count);
+            columns[20] = BuildColumn_Elapsed(rows, count);
+            columns[21] = BuildColumn_CorrelationId(rows, count);
+            columns[22] = BuildColumn_Priority(rows, count);
+            columns[23] = BuildColumn_MaybeCount(rows, count);
+            columns[24] = BuildColumn_MaybeCorrelationId(rows, count);
+            columns[25] = BuildColumn_MaybeOccurredAt(rows, count);
+            columns[26] = BuildColumn_MaybePriority(rows, count);
+            return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+        }
+
+        // Flag: Boolean
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Flag(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.BitmapBuilder(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Flag;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[0].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Tiny: Int8
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Tiny(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<sbyte>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Tiny;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[1].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // UnsignedTiny: UInt8
+        private static global::Apache.Arrow.IArrowArray BuildColumn_UnsignedTiny(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<byte>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.UnsignedTiny;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[2].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Small: Int16
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Small(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<short>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Small;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[3].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // UnsignedSmall: UInt16
+        private static global::Apache.Arrow.IArrowArray BuildColumn_UnsignedSmall(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<ushort>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.UnsignedSmall;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[4].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Count: Int32
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Count(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<int>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Count;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[5].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // UnsignedCount: UInt32
+        private static global::Apache.Arrow.IArrowArray BuildColumn_UnsignedCount(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<uint>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.UnsignedCount;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[6].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Id: Int64
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Id(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Id;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[7].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // UnsignedId: UInt64
+        private static global::Apache.Arrow.IArrowArray BuildColumn_UnsignedId(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<ulong>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.UnsignedId;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[8].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Ratio: Float
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Ratio(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<float>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Ratio;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[9].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Score: Double
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Score(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<double>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Score;
+                values.Append(value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[10].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Name: Utf8
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Name(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var builder = new global::Apache.Arrow.StringArray.Builder();
+            builder.Reserve(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.Name is { } value)
+                {
+                    builder.Append(value);
+                }
+                else
+                {
+                    ThrowRequiredNull(index, "Name");
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            return builder.Build();
+        }
+
+        // Note: Utf8
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Note(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var builder = new global::Apache.Arrow.StringArray.Builder();
+            builder.Reserve(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.Note is { } value)
+                {
+                    builder.Append(value);
+                }
+                else
+                {
+                    builder.AppendNull();
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            return builder.Build();
+        }
+
+        // Payload: Binary
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Payload(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var builder = new global::Apache.Arrow.BinaryArray.Builder();
+            builder.Reserve(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.Payload is { } value)
+                {
+                    builder.Append((global::System.ReadOnlySpan<byte>)value);
+                }
+                else
+                {
+                    ThrowRequiredNull(index, "Payload");
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            return builder.Build();
+        }
+
+        // OptionalPayload: Binary
+        private static global::Apache.Arrow.IArrowArray BuildColumn_OptionalPayload(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var builder = new global::Apache.Arrow.BinaryArray.Builder();
+            builder.Reserve(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.OptionalPayload is { } value)
+                {
+                    builder.Append((global::System.ReadOnlySpan<byte>)value);
+                }
+                else
+                {
+                    builder.AppendNull();
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            return builder.Build();
+        }
+
+        // Amount: Decimal128(38, 18)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Amount(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var builder = new global::Apache.Arrow.Decimal128Array.Builder((global::Apache.Arrow.Types.Decimal128Type)Schema.FieldsList[15].DataType);
+            builder.Reserve(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Amount;
+                try
+                {
+                    builder.Append(value);
+                }
+                catch (global::System.OverflowException exception)
+                {
+                    ThrowDoesNotFit(index, "Amount", "Decimal128(38, 18)", exception);
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            return builder.Build();
+        }
+
+        // Day: Date32
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Day(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<int>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Day;
+                values.Append(value.DayNumber - UnixEpochDayNumber);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[16].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // At: Time64(Microsecond)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_At(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.At;
+                values.Append(value.Ticks / 10L);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[17].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // LocalWallClock: Timestamp(Microsecond, no timezone)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_LocalWallClock(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.LocalWallClock;
+                values.Append(value.Ticks / 10L - UnixEpochMicroseconds);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[18].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // OccurredAt: Timestamp(Microsecond, with timezone)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_OccurredAt(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.OccurredAt;
+                values.Append(value.UtcTicks / 10L - UnixEpochMicroseconds);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[19].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Elapsed: Duration(Microsecond)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Elapsed(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Elapsed;
+                values.Append(value.Ticks / 10L);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[20].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // CorrelationId: FixedSizeBinary(16)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_CorrelationId(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<byte>(checked(count * 16));
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.CorrelationId;
+                AppendGuidBigEndian(values, value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[21].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // Priority: UInt8
+        private static global::Apache.Arrow.IArrowArray BuildColumn_Priority(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<byte>(count);
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                var value = row.Priority;
+                values.Append((byte)value);
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[22].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // MaybeCount: Int32
+        private static global::Apache.Arrow.IArrowArray BuildColumn_MaybeCount(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<int>(count);
+            var validity = new global::Apache.Arrow.ArrowBuffer.BitmapBuilder(count);
+            int nulls = 0;
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.MaybeCount is { } value)
+                {
+                    values.Append(value);
+                    validity.Append(true);
+                }
+                else
+                {
+                    values.Append(default(int));
+                    validity.Append(false);
+                    nulls++;
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[23].DataType, count, nulls, 0, new[] { nulls == 0 ? global::Apache.Arrow.ArrowBuffer.Empty : validity.Build(), values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // MaybeCorrelationId: FixedSizeBinary(16)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_MaybeCorrelationId(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<byte>(checked(count * 16));
+            var validity = new global::Apache.Arrow.ArrowBuffer.BitmapBuilder(count);
+            int nulls = 0;
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.MaybeCorrelationId is { } value)
+                {
+                    AppendGuidBigEndian(values, value);
+                    validity.Append(true);
+                }
+                else
+                {
+                    values.Append(GuidZeroBytes);
+                    validity.Append(false);
+                    nulls++;
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[24].DataType, count, nulls, 0, new[] { nulls == 0 ? global::Apache.Arrow.ArrowBuffer.Empty : validity.Build(), values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // MaybeOccurredAt: Timestamp(Microsecond, with timezone)
+        private static global::Apache.Arrow.IArrowArray BuildColumn_MaybeOccurredAt(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+            var validity = new global::Apache.Arrow.ArrowBuffer.BitmapBuilder(count);
+            int nulls = 0;
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.MaybeOccurredAt is { } value)
+                {
+                    values.Append(value.UtcTicks / 10L - UnixEpochMicroseconds);
+                    validity.Append(true);
+                }
+                else
+                {
+                    values.Append(default(long));
+                    validity.Append(false);
+                    nulls++;
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[25].DataType, count, nulls, 0, new[] { nulls == 0 ? global::Apache.Arrow.ArrowBuffer.Empty : validity.Build(), values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // MaybePriority: UInt8
+        private static global::Apache.Arrow.IArrowArray BuildColumn_MaybePriority(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
+        {
+            var values = new global::Apache.Arrow.ArrowBuffer.Builder<byte>(count);
+            var validity = new global::Apache.Arrow.ArrowBuffer.BitmapBuilder(count);
+            int nulls = 0;
+            int index = 0;
+            foreach (var row in rows)
+            {
+                if (index >= count) ThrowCollectionChanged();
+                if (row is null) ThrowNullRow(index);
+                if (row.MaybePriority is { } value)
+                {
+                    values.Append((byte)value);
+                    validity.Append(true);
+                }
+                else
+                {
+                    values.Append(default(byte));
+                    validity.Append(false);
+                    nulls++;
+                }
+                index++;
+            }
+            if (index != count) ThrowCollectionChanged();
+            var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[26].DataType, count, nulls, 0, new[] { nulls == 0 ? global::Apache.Arrow.ArrowBuffer.Empty : validity.Build(), values.Build() });
+            return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+        }
+
+        // DateOnly.DayNumber of 1970-01-01, the Date32 epoch.
+        private const int UnixEpochDayNumber = 719162;
+
+        // Microseconds from 0001-01-01 (DateTime tick zero) to 1970-01-01.
+        private const long UnixEpochMicroseconds = 62135596800000000L;
+
+        private static readonly byte[] GuidZeroBytes = new byte[16];
+
+        // Guid's in-memory layout stores its first three groups little-endian; Arrow (and
+        // RFC 4122, uuid.bytes, the arrow.uuid extension) use big-endian order throughout.
+        private static void AppendGuidBigEndian(global::Apache.Arrow.ArrowBuffer.Builder<byte> values, global::System.Guid value)
+        {
+            global::System.Span<byte> bytes = stackalloc byte[16];
+            value.TryWriteBytes(bytes);
+            global::System.MemoryExtensions.Reverse(bytes.Slice(0, 4));
+            global::System.MemoryExtensions.Reverse(bytes.Slice(4, 2));
+            global::System.MemoryExtensions.Reverse(bytes.Slice(6, 2));
+            values.Append((global::System.ReadOnlySpan<byte>)bytes);
+        }
+
+        [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        private static void ThrowCollectionChanged()
+        {
+            throw new global::System.InvalidOperationException("The row collection changed while it was being converted: it no longer yields Count rows.");
+        }
+
+        [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        private static void ThrowNullRow(int index)
+        {
+            throw new global::System.ArgumentException("Row " + index + " is null; " + "ScalarEvent" + " rows must not be null.", "rows");
+        }
+
+        [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        private static void ThrowRequiredNull(int index, string field)
+        {
+            throw new global::System.ArgumentException("Row " + index + ": the value for non-nullable Arrow field '" + field + "' is null.", "rows");
+        }
+
+        [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
+        private static void ThrowDoesNotFit(int index, string field, string arrowType, global::System.Exception inner)
+        {
+            throw new global::System.ArgumentException("Row " + index + ": the value for Arrow field '" + field + "' does not fit " + arrowType + "; nothing is rounded or truncated.", "rows", inner);
+        }
     }
 }

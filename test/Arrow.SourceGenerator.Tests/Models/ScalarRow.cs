@@ -55,3 +55,11 @@ public partial class ScalarRow
 /// <summary>Positional record: the design doc's founding sketch.</summary>
 [ArrowSerializable]
 public partial record Order(long Id, string? Customer, [ArrowDecimal(18, 4)] decimal Total);
+
+/// <summary>A struct target: no null-row checks, copied by value into chunks.</summary>
+[ArrowSerializable]
+public partial struct Point
+{
+    public int X { get; set; }
+    public int Y { get; set; }
+}

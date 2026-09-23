@@ -1,7 +1,11 @@
 namespace Arrow.SourceGenerator.Benchmarks;
 
-/// <summary>A representative flat row: fixed-width, nullable, string and decimal columns.</summary>
-public sealed class BenchmarkRow
+/// <summary>
+/// A representative flat row: fixed-width, nullable, string and decimal columns. Its generated
+/// schema is identical to <see cref="HandWrittenArrow.Schema"/>, so both sides do the same work.
+/// </summary>
+[ArrowSerializable]
+public sealed partial class BenchmarkRow
 {
     public long Id { get; init; }
     public int? Quantity { get; init; }

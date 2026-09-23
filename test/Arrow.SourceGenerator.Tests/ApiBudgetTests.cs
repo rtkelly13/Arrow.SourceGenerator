@@ -19,6 +19,8 @@ public sealed partial class ApiBudgetTests
     private static readonly string[] CompanionOperations =
     [
         "static Schema.get -> Apache.Arrow.Schema",
+        "static ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Model> rows) -> Apache.Arrow.RecordBatch",
+        "static ToRecordBatches(System.Collections.Generic.IEnumerable<Model> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>",
     ];
 
     private static IReadOnlyList<string> Surface(string members)

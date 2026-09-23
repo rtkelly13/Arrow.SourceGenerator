@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Foundation 3: `{Type}Arrow.ToRecordBatch(rows)` and lazy `ToRecordBatches(rows, batchSize)`.
+  Column-at-a-time conversion into exactly reserved Arrow buffers; validity bitmaps only when a
+  column has nulls; clear errors for null rows, null non-nullable members, decimals that do not fit,
+  and collections that change mid-conversion. IPC round-trip tests, the Native AOT write path, a
+  generated-vs-hand-written benchmark, and `docs/03-OWNERSHIP.md`.
 - Foundation 2: Arrow planning and the generated `{Type}Arrow.Schema`. P0 scalar mapping table
   (`docs/02-TYPE-MAPPING.md`), `[ArrowDecimal(p, s)]`, an immutable `EmissionPlan` shared by all
   emitters, ARROW001 (unsupported member type), ARROW002 (invalid decimal), ARROW020 (Apache.Arrow
