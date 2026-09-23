@@ -1,0 +1,54 @@
+<Project>
+    <PropertyGroup>
+        <!--
+      Development default only. A release derives its version from the pushed tag and passes
+      -p:Version, which overrides this.
+    -->
+        <Version>0.0.1</Version>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <!--
+      Warnings are not errors in local builds; CI passes -warnaserror explicitly. Enabling it here
+      breaks every contributor on a newer SDK the moment that SDK ships a new analyzer.
+    -->
+        <RollForward>LatestMajor</RollForward>
+    </PropertyGroup>
+
+    <!-- Package metadata and SourceLink -->
+    <PropertyGroup>
+        <Authors>Ryan Kelly</Authors>
+        <Copyright>Copyright (c) 2026 Ryan Kelly</Copyright>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageProjectUrl>https://github.com/rtkelly13/Arrow.SourceGenerator</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/rtkelly13/Arrow.SourceGenerator.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>apache-arrow;arrow;source-generator;roslyn;aot;columnar;dotnet</PackageTags>
+        <PackageReadmeFile>PACKAGE_README.md</PackageReadmeFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'"
+            >true</ContinuousIntegrationBuild>
+        <DebugType>embedded</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
+
+    <!-- Only src/ projects are packable; everything else opts out here rather than per project. -->
+    <PropertyGroup Condition="!$(MSBuildProjectDirectory.Contains('$([System.IO.Path]::DirectorySeparatorChar)src$([System.IO.Path]::DirectorySeparatorChar)'))">
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsPackable)' != 'false'">
+        <None Include="$(MSBuildThisFileDirectory)PACKAGE_README.md" Pack="true" PackagePath="\" />
+        <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="\" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+        <PackageReference Include="Meziantou.Analyzer" PrivateAssets="All">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+</Project>
