@@ -28,6 +28,18 @@ internal static class DiagnosticDescriptors
         "Member '{0}' of '{1}': {2}"
     );
 
+    public static readonly DiagnosticDescriptor UnsupportedSurrogate = Error(
+        "ARROW003",
+        "Unsupported adapter surrogate",
+        "Adapter '{0}' used for member '{1}' stores '{2}', which is not a built-in Arrow-mappable type; a surrogate must be a built-in (adapter chains and structural surrogates are not supported yet)"
+    );
+
+    public static readonly DiagnosticDescriptor AmbiguousAdapter = Error(
+        "ARROW005",
+        "Ambiguous adapter",
+        "Member '{0}' of '{1}' has type '{2}', for which more than one adapter is registered at the same precedence: {3}; keep one registration, or choose with [ArrowAdapter] on the member"
+    );
+
     public static readonly DiagnosticDescriptor MustBePartial = Error(
         "ARROW008",
         "Arrow target must be partial",
@@ -80,6 +92,12 @@ internal static class DiagnosticDescriptors
         "ARROW016",
         "Public field is not mapped",
         "Public field '{0}' of '{1}' is not mapped; only properties become Arrow fields. Make it a property, or mark it [ArrowIgnore] to silence this warning."
+    );
+
+    public static readonly DiagnosticDescriptor InvalidAdapter = Error(
+        "ARROW017",
+        "Invalid adapter",
+        "'{0}' cannot be used as an Arrow type adapter: {1}"
     );
 
     public static readonly DiagnosticDescriptor RequiredMemberNotMapped = Error(

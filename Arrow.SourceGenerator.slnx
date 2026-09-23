@@ -2,6 +2,10 @@
     <Folder Name="/benchmarks/">
         <Project Path="benchmarks/Arrow.SourceGenerator.Benchmarks/Arrow.SourceGenerator.Benchmarks.csproj" />
     </Folder>
+    <Folder Name="/samples/">
+        <Project Path="samples/Basic/Basic.csproj" />
+        <Project Path="samples/NodaTime/NodaTime.Sample.csproj" />
+    </Folder>
     <Folder Name="/src/">
         <Project Path="src/Arrow.SourceGenerator.Attributes/Arrow.SourceGenerator.Attributes.csproj" />
         <Project Path="src/Arrow.SourceGenerator/Arrow.SourceGenerator.csproj" />

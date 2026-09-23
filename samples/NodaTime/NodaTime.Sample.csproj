@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>NodaTimeSample</RootNamespace>
+        <AssemblyName>NodaTime.Sample</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Apache.Arrow" />
+        <PackageReference Include="NodaTime" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Arrow.SourceGenerator.Attributes\Arrow.SourceGenerator.Attributes.csproj" />
+        <ProjectReference
+            Include="..\..\src\Arrow.SourceGenerator\Arrow.SourceGenerator.csproj"
+            OutputItemType="Analyzer"
+            ReferenceOutputAssembly="false"
+        />
+    </ItemGroup>
+</Project>

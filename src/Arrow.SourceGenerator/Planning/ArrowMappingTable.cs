@@ -16,6 +16,10 @@ internal static class ArrowMappingTable
 
     public const int MaxDecimal128Precision = 38;
 
+    /// <summary>Whether the type has a built-in mapping (and so is never adapted by default).</summary>
+    public static bool HasBuiltIn(TypeRef type) =>
+        TryMap(type, DefaultDecimalPrecision, DefaultDecimalScale) is not null;
+
     /// <summary>Maps a built-in kind, or returns null when it has no Arrow representation.</summary>
     public static ArrowLeafPlan? TryMap(TypeRef type, int precision, int scale) =>
         type.Kind switch

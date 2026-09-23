@@ -1,0 +1,16 @@
+#nullable enable
+Golden.Adapters.AdapterEventArrowView.Alias.get -> Apache.Arrow.StringArray
+Golden.Adapters.AdapterEventArrowView.At.get -> Apache.Arrow.Int64Array
+Golden.Adapters.AdapterEventArrowView.Batch.get -> Apache.Arrow.RecordBatch
+Golden.Adapters.AdapterEventArrowView.Label.get -> Apache.Arrow.StringArray
+Golden.Adapters.AdapterEventArrowView.Length.get -> int
+Golden.Adapters.AdapterEventArrowView.Replaces.get -> Apache.Arrow.Int32Array
+Golden.Adapters.AdapterEventArrowView.Sku.get -> Apache.Arrow.Int32Array
+sealed Golden.Adapters.AdapterEventArrowView
+static Golden.Adapters.AdapterEventArrow
+static Golden.Adapters.AdapterEventArrow.FromRecordBatch(Apache.Arrow.RecordBatch batch) -> Golden.Adapters.AdapterEvent[]
+static Golden.Adapters.AdapterEventArrow.FromRecordBatches(System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch> batches) -> System.Collections.Generic.IEnumerable<Golden.Adapters.AdapterEvent>
+static Golden.Adapters.AdapterEventArrow.Schema.get -> Apache.Arrow.Schema
+static Golden.Adapters.AdapterEventArrow.ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Golden.Adapters.AdapterEvent> rows) -> Apache.Arrow.RecordBatch
+static Golden.Adapters.AdapterEventArrow.ToRecordBatches(System.Collections.Generic.IEnumerable<Golden.Adapters.AdapterEvent> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>
+static Golden.Adapters.AdapterEventArrow.View(Apache.Arrow.RecordBatch batch) -> AdapterEventArrowView

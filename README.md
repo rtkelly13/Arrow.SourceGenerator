@@ -30,6 +30,7 @@ A small, deliberately budgeted public surface per model; everything else is inte
 | `test/Arrow.SourceGenerator.AotTest` | Native AOT gate — published and executed natively in CI. |
 | `test/Arrow.SourceGenerator.PackageConsumption` | Consumes the packed `.nupkg` files like an outside project. |
 | `benchmarks/Arrow.SourceGenerator.Benchmarks` | BenchmarkDotNet, always against a hand-written Apache.Arrow baseline. |
+| `samples/Basic`, `samples/NodaTime` | Runnable end-to-end usage; NodaTime shows the adapter model. |
 | `docs/` | Design goals and the contracts each capability must satisfy. |
 
 ## Building

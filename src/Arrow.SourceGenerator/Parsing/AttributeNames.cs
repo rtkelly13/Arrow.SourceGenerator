@@ -10,4 +10,7 @@ internal static class AttributeNames
     public const string Column = "Arrow.SourceGenerator.ArrowColumnAttribute";
     public const string Ignore = "Arrow.SourceGenerator.ArrowIgnoreAttribute";
     public const string Decimal = "Arrow.SourceGenerator.ArrowDecimalAttribute";
+    public const string Adapter = "Arrow.SourceGenerator.ArrowAdapterAttribute";
+    public const string TypeAdapter = "Arrow.SourceGenerator.ArrowTypeAdapterAttribute";
+    public const string AttributesAssembly = "Arrow.SourceGenerator.Attributes";
 }

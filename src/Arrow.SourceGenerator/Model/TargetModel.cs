@@ -60,7 +60,11 @@ internal sealed record MemberModel(
 /// Member-level annotations that refine planning, recorded as written. Validation belongs to
 /// planning, which knows what the member's type maps to.
 /// </summary>
-internal sealed record MemberAnnotations(int? DecimalPrecision, int? DecimalScale)
+internal sealed record MemberAnnotations(
+    int? DecimalPrecision,
+    int? DecimalScale,
+    AdapterModel? ExplicitAdapter = null
+)
 {
     public static MemberAnnotations None { get; } = new(null, null);
 
@@ -115,6 +119,33 @@ internal enum ClrTypeKind
     Guid,
     Enum,
     Char,
+}
+
+/// <summary>
+/// A validated type adapter: <c>ToStorage(Domain) -&gt; Surrogate</c> and
+/// <c>FromStorage(Surrogate) -&gt; Domain</c> on <see cref="AdapterType"/>.
+/// </summary>
+/// <param name="AdapterType">The adapter class, <c>global::</c>-qualified.</param>
+/// <param name="Domain">The adapted CLR type.</param>
+/// <param name="Surrogate">The storage type the value is converted to and mapped through.</param>
+internal sealed record AdapterModel(string AdapterType, TypeRef Domain, TypeRef Surrogate)
+{
+    public string DomainType => Domain.FullyQualifiedName;
+}
+
+/// <summary>An assembly-level registration and the precedence tier it came from.</summary>
+/// <param name="Adapter">The adapter.</param>
+/// <param name="Tier">0 for the compiling assembly, 1 for a referenced assembly.</param>
+/// <param name="Source">Where the registration was found, for ambiguity messages.</param>
+internal sealed record AdapterRegistration(AdapterModel Adapter, int Tier, string Source);
+
+/// <summary>Every assembly-level registration visible to a compilation.</summary>
+internal sealed record AdapterRegistry(
+    EquatableArray<AdapterRegistration> Registrations,
+    EquatableArray<DiagnosticInfo> Diagnostics
+)
+{
+    public static AdapterRegistry Empty { get; } = new(default, default);
 }
 
 /// <summary>How the read path constructs an instance.</summary>

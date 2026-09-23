@@ -97,7 +97,11 @@ internal static class HelperEmitter
             }
         }
 
-        if (context.Plan.Fields.Any(f => !f.IsNullable && !f.IsValueType))
+        if (
+            context.Plan.Fields.Any(f =>
+                !f.IsNullable && (!f.IsValueType || f.Adapter is { DomainIsValueType: false })
+            )
+        )
         {
             writer.Line();
             writer.Line(DoesNotReturn);
