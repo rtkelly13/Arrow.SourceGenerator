@@ -62,30 +62,45 @@ namespace Golden.Adapters
         private static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Golden.Adapters.AdapterEvent> rows, int batchSize)
         {
             var chunk = new global::System.Collections.Generic.List<global::Golden.Adapters.AdapterEvent>(global::System.Math.Min(batchSize, 1024));
+            global::Apache.Arrow.RecordBatch batch;
             foreach (var row in rows)
             {
                 chunk.Add(row);
                 if (chunk.Count == batchSize)
                 {
-                    yield return BuildRecordBatch(chunk, chunk.Count);
+                    batch = BuildRecordBatch(chunk, chunk.Count);
                     chunk.Clear();
+                    yield return batch;
                 }
             }
             if (chunk.Count > 0)
             {
-                yield return BuildRecordBatch(chunk, chunk.Count);
+                batch = BuildRecordBatch(chunk, chunk.Count);
+                chunk.Clear();
+                yield return batch;
             }
         }
 
         private static global::Apache.Arrow.RecordBatch BuildRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Adapters.AdapterEvent> rows, int count)
         {
             var columns = new global::Apache.Arrow.IArrowArray[5];
-            columns[0] = BuildColumn_Sku(rows, count);
-            columns[1] = BuildColumn_Replaces(rows, count);
-            columns[2] = BuildColumn_Label(rows, count);
-            columns[3] = BuildColumn_Alias(rows, count);
-            columns[4] = BuildColumn_At(rows, count);
-            return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+            try
+            {
+                columns[0] = BuildColumn_Sku(rows, count);
+                columns[1] = BuildColumn_Replaces(rows, count);
+                columns[2] = BuildColumn_Label(rows, count);
+                columns[3] = BuildColumn_Alias(rows, count);
+                columns[4] = BuildColumn_At(rows, count);
+                return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+            }
+            catch
+            {
+                foreach (var column in columns)
+                {
+                    column?.Dispose();
+                }
+                throw;
+            }
         }
 
         // Sku: Int32
@@ -294,7 +309,7 @@ namespace Golden.Adapters
         /// Checks every assumption the reader makes about <paramref name="batch"/> and returns the
         /// column ordinal of each field. Throws once, listing every problem found.
         /// </summary>
-        private static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
+        internal static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
         {
             var ordinals = new int[5];
             global::System.Collections.Generic.List<string>? errors = null;
@@ -389,8 +404,7 @@ namespace Golden.Adapters
         public static AdapterEventArrowView View(global::Apache.Arrow.RecordBatch batch)
         {
             if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
-            int[] ordinals = ResolveColumns(batch);
-            return new AdapterEventArrowView(batch, (global::Apache.Arrow.Int32Array)batch.Column(ordinals[0]), (global::Apache.Arrow.Int32Array)batch.Column(ordinals[1]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[2]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[3]), (global::Apache.Arrow.Int64Array)batch.Column(ordinals[4]));
+            return new AdapterEventArrowView(batch);
         }
 
         [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
@@ -453,6 +467,16 @@ namespace Golden.Adapters
             global::Apache.Arrow.ArrowBuffer validity = data.Buffers[0];
             if (data.NullCount > 0 && validity.IsEmpty) return "declares nulls but has no validity bitmap";
             if (!validity.IsEmpty && validity.Length < (bits + 7) / 8) return "has a validity bitmap shorter than its length";
+            if (!validity.IsEmpty && data.NullCount >= 0)
+            {
+                global::System.ReadOnlySpan<byte> map = validity.Span;
+                long unset = 0;
+                for (long i = data.Offset; i < bits; i++)
+                {
+                    if ((map[(int)(i >> 3)] & (1 << (int)(i & 7))) == 0) unset++;
+                }
+                if (unset != data.NullCount) return "declares " + data.NullCount + " null value(s) but its validity bitmap marks " + unset;
+            }
             return null;
         }
 
@@ -502,14 +526,16 @@ namespace Golden.Adapters
     /// </summary>
     public sealed partial class AdapterEventArrowView
     {
-        internal AdapterEventArrowView(global::Apache.Arrow.RecordBatch batch, global::Apache.Arrow.Int32Array column0, global::Apache.Arrow.Int32Array column1, global::Apache.Arrow.StringArray column2, global::Apache.Arrow.StringArray column3, global::Apache.Arrow.Int64Array column4)
+        internal AdapterEventArrowView(global::Apache.Arrow.RecordBatch batch)
         {
+            if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+            int[] ordinals = AdapterEventArrow.ResolveColumns(batch);
             Batch = batch;
-            Sku = column0;
-            Replaces = column1;
-            Label = column2;
-            Alias = column3;
-            At = column4;
+            Sku = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[0]);
+            Replaces = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[1]);
+            Label = (global::Apache.Arrow.StringArray)batch.Column(ordinals[2]);
+            Alias = (global::Apache.Arrow.StringArray)batch.Column(ordinals[3]);
+            At = (global::Apache.Arrow.Int64Array)batch.Column(ordinals[4]);
         }
 
         /// <summary>The batch this view reads.</summary>

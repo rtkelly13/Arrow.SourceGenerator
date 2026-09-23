@@ -166,6 +166,48 @@ public sealed class AdapterDiscoveryTests
         source.ShouldContain("DoubleType.Default");
     }
 
+    /// <summary>
+    /// Regression: <c>[ArrowAdapter]</c> is <c>Inherited = true</c>, but an override of the
+    /// annotated base property lost it, silently falling back to the registered adapter.
+    /// </summary>
+    [Fact]
+    public void AMemberAdapterOnAnOverriddenBasePropertyIsInherited()
+    {
+        string target = """
+            using Arrow.SourceGenerator;
+            namespace App;
+
+            public class Billed
+            {
+                [ArrowAdapter(typeof(Lib.Explicit))]
+                public virtual Lib.Money Total { get; set; }
+            }
+
+            [ArrowSerializable]
+            public partial class Invoice : Billed
+            {
+                public override Lib.Money Total { get; set; }
+            }
+            """;
+
+        string source = Emitted(
+            Run([
+                Domain,
+                Adapter("Registered"),
+                Adapter(
+                    "Explicit",
+                    "double",
+                    toBody: "(double)value.Amount",
+                    fromBody: "new((decimal)storage)"
+                ),
+                "[assembly: Arrow.SourceGenerator.ArrowTypeAdapter(typeof(Lib.Registered))]",
+                target,
+            ])
+        );
+        source.ShouldContain("global::Lib.Explicit.ToStorage(");
+        source.ShouldNotContain("global::Lib.Registered");
+    }
+
     [Fact]
     public void TwoRegistrationsAtTheSameTierAreAmbiguous()
     {
