@@ -213,6 +213,23 @@ internal static class HelperEmitter
             writer.Line(
                 "if (!validity.IsEmpty && validity.Length < (bits + 7) / 8) return \"has a validity bitmap shorter than its length\";"
             );
+            // NullCount is only a claim: the reader decides null-ness from the bitmap, and a
+            // non-nullable field is checked with NullCount, so the two must agree. A negative
+            // NullCount means "not computed", which Apache.Arrow derives from the bitmap itself.
+            using (writer.Block("if (!validity.IsEmpty && data.NullCount >= 0)"))
+            {
+                writer.Line("global::System.ReadOnlySpan<byte> map = validity.Span;");
+                writer.Line("long unset = 0;");
+                using (writer.Block("for (long i = data.Offset; i < bits; i++)"))
+                {
+                    writer.Line("if ((map[(int)(i >> 3)] & (1 << (int)(i & 7))) == 0) unset++;");
+                }
+
+                writer.Line(
+                    "if (unset != data.NullCount) return \"declares \" + data.NullCount + \" null value(s) but its validity bitmap marks \" + unset;"
+                );
+            }
+
             writer.Line("return null;");
         }
 

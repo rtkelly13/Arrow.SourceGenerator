@@ -62,12 +62,12 @@ The companion exposes a fixed set of operations that does **not** grow with the 
 - type parameters that differ: decimal precision/scale, time units, timestamp timezone presence,
   fixed-size width;
 - dictionary-encoded and extension-typed columns;
-- a schema field whose type disagrees with its column;
+- a schema field whose type disagrees with its column, type parameters included;
 - a column whose length differs from the batch;
 - nulls in a field mapped to a non-nullable member (checked on the data, so producers such as
   PyArrow that mark every field nullable interoperate);
-- structurally unsound buffers: short value buffers, short validity bitmaps, and offsets that
-  decrease or run past the value buffer.
+- structurally unsound buffers: short value buffers, short validity bitmaps, a `NullCount` that
+  disagrees with the validity bitmap, and offsets that decrease or run past the value buffer.
 
 Individual values that the CLR type cannot hold (a `Date32` past `DateOnly.MaxValue`, a
 `Decimal128` with more significant digits than `System.Decimal`'s 96 bits) fail with the row and

@@ -1043,8 +1043,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Decimal128, "Decimal128(38, 18)")
                         ?? (type is global::Apache.Arrow.Types.Decimal128Type d && (d.Precision != 38 || d.Scale != 18) ? "expected Decimal128(38, 18), found Decimal128(" + d.Precision + ", " + d.Scale + ")" : null)
+                        ?? ((declared is global::Apache.Arrow.Types.Decimal128Type declaredd && (declaredd.Precision != 38 || declaredd.Scale != 18) ? "expected Decimal128(38, 18), found Decimal128(" + declaredd.Precision + ", " + declaredd.Scale + ")" : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, 16)
                         ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
                         ;
@@ -1075,8 +1077,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Time64, "Time64(Microsecond)")
                         ?? (type is global::Apache.Arrow.Types.Time64Type t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : null)
+                        ?? ((declared is global::Apache.Arrow.Types.Time64Type declaredt && declaredt.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + declaredt.Unit : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, sizeof(long))
                         ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
                         ;
@@ -1092,8 +1096,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Timestamp, "Timestamp(Microsecond, no timezone)")
                         ?? (type is global::Apache.Arrow.Types.TimestampType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : type is global::Apache.Arrow.Types.TimestampType z && !string.IsNullOrEmpty(z.Timezone) ? "expected a wall-clock timestamp with no timezone, found timezone '" + z.Timezone + "'; map an instant to DateTimeOffset" : null)
+                        ?? ((declared is global::Apache.Arrow.Types.TimestampType declaredt && declaredt.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + declaredt.Unit : declared is global::Apache.Arrow.Types.TimestampType declaredz && !string.IsNullOrEmpty(declaredz.Timezone) ? "expected a wall-clock timestamp with no timezone, found timezone '" + declaredz.Timezone + "'; map an instant to DateTimeOffset" : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, sizeof(long))
                         ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
                         ;
@@ -1109,8 +1115,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Timestamp, "Timestamp(Microsecond, with timezone)")
                         ?? (type is global::Apache.Arrow.Types.TimestampType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : type is global::Apache.Arrow.Types.TimestampType z && string.IsNullOrEmpty(z.Timezone) ? "expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime" : null)
+                        ?? ((declared is global::Apache.Arrow.Types.TimestampType declaredt && declaredt.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + declaredt.Unit : declared is global::Apache.Arrow.Types.TimestampType declaredz && string.IsNullOrEmpty(declaredz.Timezone) ? "expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime" : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, sizeof(long))
                         ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
                         ;
@@ -1126,8 +1134,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Duration, "Duration(Microsecond)")
                         ?? (type is global::Apache.Arrow.Types.DurationType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : null)
+                        ?? ((declared is global::Apache.Arrow.Types.DurationType declaredt && declaredt.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + declaredt.Unit : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, sizeof(long))
                         ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
                         ;
@@ -1143,8 +1153,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.FixedSizedBinary, "FixedSizeBinary(16)")
                         ?? (type is global::Apache.Arrow.Types.FixedSizeBinaryType f && f.ByteWidth != 16 ? "expected FixedSizeBinary(16), found FixedSizeBinary(" + f.ByteWidth + ")" : null)
+                        ?? ((declared is global::Apache.Arrow.Types.FixedSizeBinaryType declaredf && declaredf.ByteWidth != 16 ? "expected FixedSizeBinary(16), found FixedSizeBinary(" + declaredf.ByteWidth + ")" : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, 16)
                         ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
                         ;
@@ -1189,8 +1201,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.FixedSizedBinary, "FixedSizeBinary(16)")
                         ?? (type is global::Apache.Arrow.Types.FixedSizeBinaryType f && f.ByteWidth != 16 ? "expected FixedSizeBinary(16), found FixedSizeBinary(" + f.ByteWidth + ")" : null)
+                        ?? ((declared is global::Apache.Arrow.Types.FixedSizeBinaryType declaredf && declaredf.ByteWidth != 16 ? "expected FixedSizeBinary(16), found FixedSizeBinary(" + declaredf.ByteWidth + ")" : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, 16)
                         ;
                     if (problem is not null) AddError(ref errors, "MaybeCorrelationId", problem);
@@ -1205,8 +1219,10 @@ namespace Golden.Events
                 {
                     global::Apache.Arrow.IArrowArray column = batch.Column(index);
                     global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    global::Apache.Arrow.Types.IArrowType declared = batch.Schema.FieldsList[index].DataType;
                     string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Timestamp, "Timestamp(Microsecond, with timezone)")
                         ?? (type is global::Apache.Arrow.Types.TimestampType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : type is global::Apache.Arrow.Types.TimestampType z && string.IsNullOrEmpty(z.Timezone) ? "expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime" : null)
+                        ?? ((declared is global::Apache.Arrow.Types.TimestampType declaredt && declaredt.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + declaredt.Unit : declared is global::Apache.Arrow.Types.TimestampType declaredz && string.IsNullOrEmpty(declaredz.Timezone) ? "expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime" : null) is string declaredProblem ? "has a schema field whose type disagrees with its column: " + declaredProblem : null)
                         ?? CheckFixedWidth(column, sizeof(long))
                         ;
                     if (problem is not null) AddError(ref errors, "MaybeOccurredAt", problem);
@@ -1320,6 +1336,16 @@ namespace Golden.Events
             global::Apache.Arrow.ArrowBuffer validity = data.Buffers[0];
             if (data.NullCount > 0 && validity.IsEmpty) return "declares nulls but has no validity bitmap";
             if (!validity.IsEmpty && validity.Length < (bits + 7) / 8) return "has a validity bitmap shorter than its length";
+            if (!validity.IsEmpty && data.NullCount >= 0)
+            {
+                global::System.ReadOnlySpan<byte> map = validity.Span;
+                long unset = 0;
+                for (long i = data.Offset; i < bits; i++)
+                {
+                    if ((map[(int)(i >> 3)] & (1 << (int)(i & 7))) == 0) unset++;
+                }
+                if (unset != data.NullCount) return "declares " + data.NullCount + " null value(s) but its validity bitmap marks " + unset;
+            }
             return null;
         }
 

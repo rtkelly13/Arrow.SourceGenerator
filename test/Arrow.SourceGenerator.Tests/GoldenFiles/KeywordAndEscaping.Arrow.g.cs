@@ -329,6 +329,16 @@ namespace Golden.@namespace
                 global::Apache.Arrow.ArrowBuffer validity = data.Buffers[0];
                 if (data.NullCount > 0 && validity.IsEmpty) return "declares nulls but has no validity bitmap";
                 if (!validity.IsEmpty && validity.Length < (bits + 7) / 8) return "has a validity bitmap shorter than its length";
+                if (!validity.IsEmpty && data.NullCount >= 0)
+                {
+                    global::System.ReadOnlySpan<byte> map = validity.Span;
+                    long unset = 0;
+                    for (long i = data.Offset; i < bits; i++)
+                    {
+                        if ((map[(int)(i >> 3)] & (1 << (int)(i & 7))) == 0) unset++;
+                    }
+                    if (unset != data.NullCount) return "declares " + data.NullCount + " null value(s) but its validity bitmap marks " + unset;
+                }
                 return null;
             }
 

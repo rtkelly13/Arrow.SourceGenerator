@@ -124,6 +124,46 @@ public sealed class HostileBatchTests
         Rejection(batch).ShouldContain("field 'Id' is non-nullable but holds 1 null value(s)");
     }
 
+    /// <summary>
+    /// Regression: a non-nullable field was checked with NullCount alone, so an array whose
+    /// bitmap marks a null while claiming NullCount 0 was read, and the undefined value slot
+    /// materialised as a legitimate value.
+    /// </summary>
+    [Fact]
+    public void NullCountThatDisagreesWithTheValidityBitmapIsRejected()
+    {
+        // Bit 0 unset (row 0 null), bit 1 set; the array nevertheless claims no nulls.
+        var validity = new ArrowBuffer(new byte[] { 0b10, 0, 0, 0, 0, 0, 0, 0 });
+        var values = new ArrowBuffer(new byte[16]);
+        var hostile = new Int64Array(values, validity, 2, nullCount: 0, offset: 0);
+        using RecordBatch batch = Batch(
+            ("Id", Int64Type.Default, hostile),
+            ("Customer", StringType.Default, Customer("a", "b")),
+            ("Total", Money, Total(1m, 2m))
+        );
+
+        Rejection(batch)
+            .ShouldContain("field 'Id' declares 0 null value(s) but its validity bitmap marks 1");
+    }
+
+    [Fact]
+    public void SchemaFieldWithDifferentTypeParametersIsRejected()
+    {
+        // Same type id, different parameters: the schema claims Decimal128(18, 2) over the
+        // mapped (18, 4) data.
+        var schema = new Schema.Builder()
+            .Field(f => f.Name("Id").DataType(Int64Type.Default))
+            .Field(f => f.Name("Customer").DataType(StringType.Default))
+            .Field(f => f.Name("Total").DataType(new Decimal128Type(18, 2)))
+            .Build();
+        using var batch = new RecordBatch(schema, [Id(1), Customer("a"), Total(1m)], 1);
+
+        Rejection(batch)
+            .ShouldContain(
+                "field 'Total' has a schema field whose type disagrees with its column: expected Decimal128(18, 4), found Decimal128(18, 2)"
+            );
+    }
+
     [Fact]
     public void EveryProblemIsReportedAtOnce()
     {

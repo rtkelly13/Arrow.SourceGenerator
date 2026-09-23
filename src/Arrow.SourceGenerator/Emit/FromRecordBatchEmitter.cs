@@ -234,10 +234,17 @@ internal static class FromRecordBatchEmitter
         using (writer.Block("if (index >= 0)"))
         {
             writer.Line($"{Arrow}.IArrowArray column = batch.Column(index);");
-            string? parameterCheck = ParameterCheck(field.Leaf);
+            string? parameterCheck = ParameterCheck(field.Leaf, "type", "");
+            // The same type id is not the same type: the schema field must carry the parameters
+            // the values are decoded with, not only the array (a schema that claims
+            // Decimal128(18, 2) over (18, 4) data misdescribes every value).
+            string? declaredCheck = ParameterCheck(field.Leaf, "declared", "declared");
             if (parameterCheck is not null)
             {
                 writer.Line($"{Types}.IArrowType type = column.Data.DataType;");
+                writer.Line(
+                    $"{Types}.IArrowType declared = batch.Schema.FieldsList[index].DataType;"
+                );
             }
 
             writer.Line(
@@ -246,6 +253,9 @@ internal static class FromRecordBatchEmitter
             if (parameterCheck is not null)
             {
                 writer.Line($"    ?? {parameterCheck}");
+                writer.Line(
+                    $"    ?? ({declaredCheck} is string declaredProblem ? \"has a schema field whose type disagrees with its column: \" + declaredProblem : null)"
+                );
             }
 
             writer.Line($"    ?? {StructureCheck(field)}");
@@ -273,27 +283,33 @@ internal static class FromRecordBatchEmitter
             _ => leaf.Kind.ToString(),
         };
 
-    /// <summary>Type-parameter checks: evaluated only once the type id is known to match.</summary>
-    private static string? ParameterCheck(ArrowLeafPlan leaf) =>
+    /// <summary>
+    /// Type-parameter checks: evaluated only once the type id is known to match. Written against
+    /// the C# expression <paramref name="type"/>; <paramref name="prefix"/> keeps the pattern
+    /// variables of two checks in one statement distinct.
+    /// </summary>
+    private static string? ParameterCheck(ArrowLeafPlan leaf, string type, string prefix) =>
         leaf.Kind switch
         {
             ArrowLogicalKind.Decimal128 => string.Format(
                 CultureInfo.InvariantCulture,
-                "(type is {0}.Decimal128Type d && (d.Precision != {1} || d.Scale != {2}) ? \"expected Decimal128({1}, {2}), found Decimal128(\" + d.Precision + \", \" + d.Scale + \")\" : null)",
+                "({3} is {0}.Decimal128Type {4}d && ({4}d.Precision != {1} || {4}d.Scale != {2}) ? \"expected Decimal128({1}, {2}), found Decimal128(\" + {4}d.Precision + \", \" + {4}d.Scale + \")\" : null)",
                 Types,
                 leaf.Precision,
-                leaf.Scale
+                leaf.Scale,
+                type,
+                prefix
             ),
             ArrowLogicalKind.Time64Microsecond =>
-                $"(type is {Types}.Time64Type t && t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + t.Unit : null)",
+                $"({type} is {Types}.Time64Type {prefix}t && {prefix}t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + {prefix}t.Unit : null)",
             ArrowLogicalKind.TimestampMicrosecond =>
-                $"(type is {Types}.TimestampType t && t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + t.Unit : type is {Types}.TimestampType z && !string.IsNullOrEmpty(z.Timezone) ? \"expected a wall-clock timestamp with no timezone, found timezone '\" + z.Timezone + \"'; map an instant to DateTimeOffset\" : null)",
+                $"({type} is {Types}.TimestampType {prefix}t && {prefix}t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + {prefix}t.Unit : {type} is {Types}.TimestampType {prefix}z && !string.IsNullOrEmpty({prefix}z.Timezone) ? \"expected a wall-clock timestamp with no timezone, found timezone '\" + {prefix}z.Timezone + \"'; map an instant to DateTimeOffset\" : null)",
             ArrowLogicalKind.TimestampMicrosecondUtc =>
-                $"(type is {Types}.TimestampType t && t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + t.Unit : type is {Types}.TimestampType z && string.IsNullOrEmpty(z.Timezone) ? \"expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime\" : null)",
+                $"({type} is {Types}.TimestampType {prefix}t && {prefix}t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + {prefix}t.Unit : {type} is {Types}.TimestampType {prefix}z && string.IsNullOrEmpty({prefix}z.Timezone) ? \"expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime\" : null)",
             ArrowLogicalKind.DurationMicrosecond =>
-                $"(type is {Types}.DurationType t && t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + t.Unit : null)",
+                $"({type} is {Types}.DurationType {prefix}t && {prefix}t.Unit != {Types}.TimeUnit.Microsecond ? \"expected unit Microsecond, found \" + {prefix}t.Unit : null)",
             ArrowLogicalKind.FixedSizeBinary16 =>
-                $"(type is {Types}.FixedSizeBinaryType f && f.ByteWidth != 16 ? \"expected FixedSizeBinary(16), found FixedSizeBinary(\" + f.ByteWidth + \")\" : null)",
+                $"({type} is {Types}.FixedSizeBinaryType {prefix}f && {prefix}f.ByteWidth != 16 ? \"expected FixedSizeBinary(16), found FixedSizeBinary(\" + {prefix}f.ByteWidth + \")\" : null)",
             _ => null,
         };
 
