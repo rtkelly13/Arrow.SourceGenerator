@@ -62,28 +62,43 @@ namespace Golden.@namespace
             private static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int batchSize)
             {
                 var chunk = new global::System.Collections.Generic.List<global::Golden.@namespace.Outer.KeywordAndEscaping>(global::System.Math.Min(batchSize, 1024));
+                global::Apache.Arrow.RecordBatch batch;
                 foreach (var row in rows)
                 {
                     chunk.Add(row);
                     if (chunk.Count == batchSize)
                     {
-                        yield return BuildRecordBatch(chunk, chunk.Count);
+                        batch = BuildRecordBatch(chunk, chunk.Count);
                         chunk.Clear();
+                        yield return batch;
                     }
                 }
                 if (chunk.Count > 0)
                 {
-                    yield return BuildRecordBatch(chunk, chunk.Count);
+                    batch = BuildRecordBatch(chunk, chunk.Count);
+                    chunk.Clear();
+                    yield return batch;
                 }
             }
 
             private static global::Apache.Arrow.RecordBatch BuildRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int count)
             {
                 var columns = new global::Apache.Arrow.IArrowArray[3];
-                columns[0] = BuildColumn_class(rows, count);
-                columns[1] = BuildColumn_event(rows, count);
-                columns[2] = BuildColumn_Plain(rows, count);
-                return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+                try
+                {
+                    columns[0] = BuildColumn_class(rows, count);
+                    columns[1] = BuildColumn_event(rows, count);
+                    columns[2] = BuildColumn_Plain(rows, count);
+                    return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+                }
+                catch
+                {
+                    foreach (var column in columns)
+                    {
+                        column?.Dispose();
+                    }
+                    throw;
+                }
             }
 
             // quote"back\slash: Int32

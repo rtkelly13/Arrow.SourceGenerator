@@ -84,52 +84,67 @@ namespace Golden.Events
         private static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Golden.Events.ScalarEvent> rows, int batchSize)
         {
             var chunk = new global::System.Collections.Generic.List<global::Golden.Events.ScalarEvent>(global::System.Math.Min(batchSize, 1024));
+            global::Apache.Arrow.RecordBatch batch;
             foreach (var row in rows)
             {
                 chunk.Add(row);
                 if (chunk.Count == batchSize)
                 {
-                    yield return BuildRecordBatch(chunk, chunk.Count);
+                    batch = BuildRecordBatch(chunk, chunk.Count);
                     chunk.Clear();
+                    yield return batch;
                 }
             }
             if (chunk.Count > 0)
             {
-                yield return BuildRecordBatch(chunk, chunk.Count);
+                batch = BuildRecordBatch(chunk, chunk.Count);
+                chunk.Clear();
+                yield return batch;
             }
         }
 
         private static global::Apache.Arrow.RecordBatch BuildRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.Events.ScalarEvent> rows, int count)
         {
             var columns = new global::Apache.Arrow.IArrowArray[27];
-            columns[0] = BuildColumn_Flag(rows, count);
-            columns[1] = BuildColumn_Tiny(rows, count);
-            columns[2] = BuildColumn_UnsignedTiny(rows, count);
-            columns[3] = BuildColumn_Small(rows, count);
-            columns[4] = BuildColumn_UnsignedSmall(rows, count);
-            columns[5] = BuildColumn_Count(rows, count);
-            columns[6] = BuildColumn_UnsignedCount(rows, count);
-            columns[7] = BuildColumn_Id(rows, count);
-            columns[8] = BuildColumn_UnsignedId(rows, count);
-            columns[9] = BuildColumn_Ratio(rows, count);
-            columns[10] = BuildColumn_Score(rows, count);
-            columns[11] = BuildColumn_Name(rows, count);
-            columns[12] = BuildColumn_Note(rows, count);
-            columns[13] = BuildColumn_Payload(rows, count);
-            columns[14] = BuildColumn_OptionalPayload(rows, count);
-            columns[15] = BuildColumn_Amount(rows, count);
-            columns[16] = BuildColumn_Day(rows, count);
-            columns[17] = BuildColumn_At(rows, count);
-            columns[18] = BuildColumn_LocalWallClock(rows, count);
-            columns[19] = BuildColumn_OccurredAt(rows, count);
-            columns[20] = BuildColumn_Elapsed(rows, count);
-            columns[21] = BuildColumn_CorrelationId(rows, count);
-            columns[22] = BuildColumn_Priority(rows, count);
-            columns[23] = BuildColumn_MaybeCount(rows, count);
-            columns[24] = BuildColumn_MaybeCorrelationId(rows, count);
-            columns[25] = BuildColumn_MaybeOccurredAt(rows, count);
-            columns[26] = BuildColumn_MaybePriority(rows, count);
-            return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+            try
+            {
+                columns[0] = BuildColumn_Flag(rows, count);
+                columns[1] = BuildColumn_Tiny(rows, count);
+                columns[2] = BuildColumn_UnsignedTiny(rows, count);
+                columns[3] = BuildColumn_Small(rows, count);
+                columns[4] = BuildColumn_UnsignedSmall(rows, count);
+                columns[5] = BuildColumn_Count(rows, count);
+                columns[6] = BuildColumn_UnsignedCount(rows, count);
+                columns[7] = BuildColumn_Id(rows, count);
+                columns[8] = BuildColumn_UnsignedId(rows, count);
+                columns[9] = BuildColumn_Ratio(rows, count);
+                columns[10] = BuildColumn_Score(rows, count);
+                columns[11] = BuildColumn_Name(rows, count);
+                columns[12] = BuildColumn_Note(rows, count);
+                columns[13] = BuildColumn_Payload(rows, count);
+                columns[14] = BuildColumn_OptionalPayload(rows, count);
+                columns[15] = BuildColumn_Amount(rows, count);
+                columns[16] = BuildColumn_Day(rows, count);
+                columns[17] = BuildColumn_At(rows, count);
+                columns[18] = BuildColumn_LocalWallClock(rows, count);
+                columns[19] = BuildColumn_OccurredAt(rows, count);
+                columns[20] = BuildColumn_Elapsed(rows, count);
+                columns[21] = BuildColumn_CorrelationId(rows, count);
+                columns[22] = BuildColumn_Priority(rows, count);
+                columns[23] = BuildColumn_MaybeCount(rows, count);
+                columns[24] = BuildColumn_MaybeCorrelationId(rows, count);
+                columns[25] = BuildColumn_MaybeOccurredAt(rows, count);
+                columns[26] = BuildColumn_MaybePriority(rows, count);
+                return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+            }
+            catch
+            {
+                foreach (var column in columns)
+                {
+                    column?.Dispose();
+                }
+                throw;
+            }
         }
 
         // Flag: Boolean

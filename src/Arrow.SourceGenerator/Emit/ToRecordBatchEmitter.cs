@@ -101,23 +101,29 @@ internal static class ToRecordBatchEmitter
         {
             // Grows to the batch size rather than pre-allocating it, so a generous batchSize over a
             // short sequence costs nothing. The chunk only ever holds references (or copies of a
-            // struct model); it is cleared after each batch so rows are not kept alive.
+            // struct model). It is cleared once its batch is built and before that batch is
+            // yielded: the iterator is suspended at a yield for as long as the caller likes, and
+            // the batch has already copied everything it needs from the rows.
             writer.Line(
                 $"var chunk = new global::System.Collections.Generic.List<{context.ModelType}>(global::System.Math.Min(batchSize, 1024));"
             );
+            writer.Line($"{Arrow}.RecordBatch batch;");
             using (writer.Block("foreach (var row in rows)"))
             {
                 writer.Line("chunk.Add(row);");
                 using (writer.Block("if (chunk.Count == batchSize)"))
                 {
-                    writer.Line("yield return BuildRecordBatch(chunk, chunk.Count);");
+                    writer.Line("batch = BuildRecordBatch(chunk, chunk.Count);");
                     writer.Line("chunk.Clear();");
+                    writer.Line("yield return batch;");
                 }
             }
 
             using (writer.Block("if (chunk.Count > 0)"))
             {
-                writer.Line("yield return BuildRecordBatch(chunk, chunk.Count);");
+                writer.Line("batch = BuildRecordBatch(chunk, chunk.Count);");
+                writer.Line("chunk.Clear();");
+                writer.Line("yield return batch;");
             }
         }
 
@@ -129,12 +135,27 @@ internal static class ToRecordBatchEmitter
         )
         {
             writer.Line($"var columns = new {Arrow}.IArrowArray[{context.Plan.Fields.Count}];");
-            foreach (FieldPlan field in context.Plan.Fields)
+            // A later column can throw (a null in a non-nullable member, a value out of range);
+            // the columns already built are then owned by nobody, so release them here.
+            using (writer.Block("try"))
             {
-                writer.Line($"columns[{field.Ordinal}] = {ColumnMethod(field)}(rows, count);");
+                foreach (FieldPlan field in context.Plan.Fields)
+                {
+                    writer.Line($"columns[{field.Ordinal}] = {ColumnMethod(field)}(rows, count);");
+                }
+
+                writer.Line($"return new {Arrow}.RecordBatch(Schema, columns, count);");
             }
 
-            writer.Line($"return new {Arrow}.RecordBatch(Schema, columns, count);");
+            using (writer.Block("catch"))
+            {
+                using (writer.Block("foreach (var column in columns)"))
+                {
+                    writer.Line("column?.Dispose();");
+                }
+
+                writer.Line("throw;");
+            }
         }
 
         foreach (FieldPlan field in context.Plan.Fields)

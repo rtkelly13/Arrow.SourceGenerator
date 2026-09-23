@@ -266,6 +266,52 @@ public sealed class ToRecordBatchTests
         ScalarRowArrow.ToRecordBatches([], 3).ShouldBeEmpty();
     }
 
+    /// <summary>
+    /// Regression: the chunk was cleared only when the caller asked for the next batch, so rows
+    /// already copied into a yielded batch stayed reachable while the caller held that batch.
+    /// </summary>
+    [Fact]
+    public void RowsOfAYieldedBatchAreNotKeptAliveByTheIterator()
+    {
+        var tracked = new List<WeakReference>();
+
+        using IEnumerator<RecordBatch> batches = ScalarRowArrow
+            .ToRecordBatches(TrackedRows(tracked, count: 3), batchSize: 2)
+            .GetEnumerator();
+        batches.MoveNext().ShouldBeTrue();
+        using RecordBatch first = batches.Current;
+        first.Length.ShouldBe(2);
+
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        // Row 1 is still the source iterator's (and foreach's) current element; row 0 is only
+        // reachable through the chunk, which must already be empty.
+        tracked[0].IsAlive.ShouldBeFalse();
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining
+    )]
+    private static IEnumerable<ScalarRow> TrackedRows(List<WeakReference> tracked, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            yield return Track(tracked, i);
+        }
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining
+    )]
+    private static ScalarRow Track(List<WeakReference> tracked, int seed)
+    {
+        ScalarRow row = Sample(seed);
+        tracked.Add(new WeakReference(row));
+        return row;
+    }
+
     [Fact]
     public void ArgumentsAreValidatedEagerly()
     {
