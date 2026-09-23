@@ -32,6 +32,17 @@ public static partial class OrderArrow
 
     public static Order[] FromRecordBatch(Apache.Arrow.RecordBatch batch);
     public static IEnumerable<Order> FromRecordBatches(IEnumerable<Apache.Arrow.RecordBatch> batches);
+
+    public static OrderArrowView View(Apache.Arrow.RecordBatch batch);
+}
+
+public sealed partial class OrderArrowView       // no public constructor: obtained only via View()
+{
+    public Apache.Arrow.RecordBatch Batch { get; }
+    public int Length { get; }
+    public Apache.Arrow.Int64Array Id { get; }     // one typed array per field
+    public Apache.Arrow.StringArray Customer { get; }
+    public Apache.Arrow.Decimal128Array Total { get; }
 }
 ```
 
@@ -49,6 +60,11 @@ The companion exposes a fixed set of operations that does **not** grow with the 
 | `ToRecordBatches(IEnumerable<T>, int)` | Foundation 3 |
 | `FromRecordBatch(RecordBatch)` | Foundation 4 |
 | `FromRecordBatches(IEnumerable<RecordBatch>)` | Foundation 4 |
+| `View(RecordBatch)` → `{Type}ArrowView` | Foundation 5 |
+
+The view type is the one place field count shapes the surface: `Batch`, `Length`, and exactly one
+typed-array property per field. Model members named `Batch` or `Length` are rejected (ARROW021),
+and a type already named `{Type}Arrow` or `{Type}ArrowView` in the target's scope is ARROW011.
 
 ## Reading contract
 

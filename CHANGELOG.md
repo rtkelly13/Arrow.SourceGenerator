@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Foundation 5: `{Type}Arrow.View(batch)` returns a validated, zero-copy `{Type}ArrowView` with one
+  typed Apache.Arrow array per field. ARROW021 rejects members named `Batch`/`Length`; ARROW011
+  now also covers the view's name.
 - Foundation 4: `{Type}Arrow.FromRecordBatch(batch)` and lazy `FromRecordBatches(batches)`. Strict,
   aggregated validation once per batch (names, types, type parameters, timestamp semantics,
   dictionary/extension rejection, schema/array agreement, lengths, required-field nulls, buffer and

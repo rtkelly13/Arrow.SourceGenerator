@@ -68,12 +68,28 @@ public sealed class DiagnosticTests
     public void GenericNamesakeOfTheCompanionIsNoCollision()
     {
         GeneratorOutcome outcome = Run(
-            "[ArrowSerializable] public partial class Order { public int Id { get; set; } }\npublic static class OrderArrow<T> { }"
+            "[ArrowSerializable] public partial class Order { public int Id { get; set; } }\npublic static class OrderArrow<T> { }\npublic sealed class OrderArrowView<T> { }"
         );
         outcome.GeneratorDiagnostics.ShouldBeEmpty();
         outcome.CompilationProblems.ShouldBeEmpty();
         outcome.GeneratedSources.ShouldNotBeEmpty();
     }
+
+    [Fact]
+    public void ViewNameTaken() =>
+        ShouldReport(
+            "[ArrowSerializable] public partial class Order { public int Id { get; set; } }\npublic sealed class OrderArrowView { }",
+            "ARROW011"
+        );
+
+    [Theory]
+    [InlineData("Batch")]
+    [InlineData("Length")]
+    public void MemberNamesReservedByTheView(string name) =>
+        ShouldReport(
+            $"[ArrowSerializable] public partial class Order {{ public int {name} {{ get; set; }} }}",
+            "ARROW021"
+        );
 
     [Fact]
     public void NoMappedMembersIsAWarningAndStillEmits() =>

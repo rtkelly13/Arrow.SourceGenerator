@@ -49,7 +49,7 @@ internal static class DiagnosticDescriptors
     public static readonly DiagnosticDescriptor CompanionNameCollision = Error(
         "ARROW011",
         "Generated companion name is already taken",
-        "The generated companion for '{0}' is named '{1}', but a member with that name already exists in the same scope"
+        "The generator emits '{1}' for '{0}', but a member with that name already exists in the same scope"
     );
 
     public static readonly DiagnosticDescriptor NoMappedMembers = Warning(
@@ -98,6 +98,12 @@ internal static class DiagnosticDescriptors
         "ARROW020",
         "Apache.Arrow is not referenced",
         "'{0}' is marked [ArrowSerializable] but the project does not reference Apache.Arrow, which the generated code calls; add a package reference to Apache.Arrow"
+    );
+
+    public static readonly DiagnosticDescriptor ReservedMemberName = Error(
+        "ARROW021",
+        "Member name is reserved by the generated view",
+        "Member '{0}' of '{1}' cannot be named '{0}': the generated '{2}' already has a member of that name; rename it, or keep the Arrow field name with [ArrowColumn(\"{0}\")] on a differently named member"
     );
 
     private static DiagnosticDescriptor Error(string id, string title, string message) =>
