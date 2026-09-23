@@ -1,0 +1,36 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+        <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+        <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!--
+      Roslyn used by tests, benchmarks and tooling. The generator itself compiles against an older
+      floor through VersionOverride in its own project (see RoslynFloor there), so what it may call
+      is decided by the oldest compiler it supports, not by this pin.
+    -->
+        <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+        <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" />
+        <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
+        <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="3.0.259" />
+
+        <!--
+      Apache.Arrow: the supported floor and the pinned test version are the same today. The
+      Attributes package declares it as a dependency because generated code calls it directly.
+    -->
+        <PackageVersion Include="Apache.Arrow" Version="23.0.0" />
+
+        <!-- Tests -->
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+        <PackageVersion Include="xunit" Version="2.9.3" />
+        <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+        <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+        <PackageVersion Include="Shouldly" Version="4.3.0" />
+
+        <!-- Benchmarks -->
+        <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+    </ItemGroup>
+</Project>

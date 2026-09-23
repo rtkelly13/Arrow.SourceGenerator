@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+    Consumes the packages produced by `dotnet pack` from ../../artifacts. Run by CI after packing:
+
+      dotnet run -f net10.0 -p:GeneratorPackageVersion=<version>
+
+    ApacheArrowVersion is a parameter so the supported-version matrix (docs/05-COMPATIBILITY.md)
+    can compile the same consumer against the floor and the newest intended release.
+  -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <GeneratorPackageVersion Condition="'$(GeneratorPackageVersion)' == ''"
+            >0.0.1</GeneratorPackageVersion>
+        <ApacheArrowVersion Condition="'$(ApacheArrowVersion)' == ''">23.0.0</ApacheArrowVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Arrow.SourceGenerator" Version="$(GeneratorPackageVersion)" />
+        <PackageReference Include="Apache.Arrow" Version="$(ApacheArrowVersion)" />
+    </ItemGroup>
+</Project>

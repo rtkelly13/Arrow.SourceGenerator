@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+    The Native AOT gate (docs/06-AOT-AND-TRIMMING.md). CI publishes this with -r linux-x64 and runs
+    the native binary; `dotnet run` would execute under CoreCLR and prove nothing about AOT. The
+    program throws on any mismatch, so exit code 0 from the native executable is the result.
+  -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <PublishAot>true</PublishAot>
+        <IsAotCompatible>true</IsAotCompatible>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <RootNamespace>Arrow.SourceGenerator.AotTest</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Apache.Arrow" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Arrow.SourceGenerator.Attributes\Arrow.SourceGenerator.Attributes.csproj" />
+        <ProjectReference
+            Include="..\..\src\Arrow.SourceGenerator\Arrow.SourceGenerator.csproj"
+            OutputItemType="Analyzer"
+            ReferenceOutputAssembly="false"
+        />
+    </ItemGroup>
+</Project>

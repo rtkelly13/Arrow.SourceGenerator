@@ -1,0 +1,6 @@
+<Project>
+    <!--
+    Deliberately empty: this project consumes the packed .nupkg files exactly as an outside
+    consumer would, so it must not inherit the repository's build properties or analyzers.
+  -->
+</Project>

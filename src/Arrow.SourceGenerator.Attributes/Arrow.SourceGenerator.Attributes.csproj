@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--
+    The consumer-referenceable contract: model annotations and nothing else. This assembly is meant
+    to stay tiny (docs/00-DESIGN-GOALS.md section 6). Its public surface is tracked by
+    PublicAPI.Shipped.txt / PublicAPI.Unshipped.txt and gated by RS0016/RS0017.
+  -->
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>Arrow.SourceGenerator</RootNamespace>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Description>Attributes that mark .NET models for compile-time Apache Arrow mapping by Arrow.SourceGenerator.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="All" />
+        <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+        <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+    </ItemGroup>
+</Project>

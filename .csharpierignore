@@ -1,0 +1,3 @@
+# Golden files are byte-for-byte generator output; reformatting them would make the golden
+# comparison test the formatter instead of the emitter.
+test/Arrow.SourceGenerator.Tests/GoldenFiles/**/*.g.cs

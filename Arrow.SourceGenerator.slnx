@@ -1,0 +1,13 @@
+<Solution>
+    <Folder Name="/benchmarks/">
+        <Project Path="benchmarks/Arrow.SourceGenerator.Benchmarks/Arrow.SourceGenerator.Benchmarks.csproj" />
+    </Folder>
+    <Folder Name="/src/">
+        <Project Path="src/Arrow.SourceGenerator.Attributes/Arrow.SourceGenerator.Attributes.csproj" />
+        <Project Path="src/Arrow.SourceGenerator/Arrow.SourceGenerator.csproj" />
+    </Folder>
+    <Folder Name="/test/">
+        <Project Path="test/Arrow.SourceGenerator.AotTest/Arrow.SourceGenerator.AotTest.csproj" />
+        <Project Path="test/Arrow.SourceGenerator.Tests/Arrow.SourceGenerator.Tests.csproj" />
+    </Folder>
+</Solution>

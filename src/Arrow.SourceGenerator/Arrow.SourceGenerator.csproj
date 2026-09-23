@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>Arrow.SourceGenerator</RootNamespace>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <Description>Roslyn incremental source generator that emits reflection-free Apache Arrow schemas and RecordBatch conversions for .NET models.</Description>
+
+        <!--
+      The generator ships only as an analyzer, never as a library: nothing may compile against it.
+      Every type in this assembly is internal, so there is no package API to govern here (tests
+      reach internals through InternalsVisibleTo). NU5128 is the expected "no lib/ assets" warning
+      for an analyzer-only package.
+    -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAnalyzer</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <!--
+    Roslyn floor. 4.8 is the .NET 8 SDK / VS 17.8 compiler, the oldest host this analyzer promises
+    to load into, and comfortably past the 4.3 floor ForAttributeWithMetadataName needs. Compiling
+    against the floor is what stops the generator calling an API a supported compiler lacks.
+    Raising it is a compatibility decision (docs/05-COMPATIBILITY.md), not a routine bump.
+  -->
+    <PropertyGroup>
+        <RoslynFloor>4.8.0</RoslynFloor>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference
+            Include="Microsoft.CodeAnalysis.CSharp"
+            VersionOverride="$(RoslynFloor)"
+            PrivateAssets="all"
+        />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    </ItemGroup>
+
+    <!--
+    Deliberately not PrivateAssets="all": generated code refers to types in the Attributes package,
+    so installing the generator must bring it along. The generator never binds to that assembly at
+    analysis time; it matches attributes by metadata name.
+  -->
+    <ItemGroup>
+        <ProjectReference Include="..\Arrow.SourceGenerator.Attributes\Arrow.SourceGenerator.Attributes.csproj" />
+    </ItemGroup>
+
+    <Target Name="PackAnalyzer">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers/dotnet/cs" />
+        </ItemGroup>
+    </Target>
+</Project>

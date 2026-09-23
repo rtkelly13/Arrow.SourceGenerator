@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  # Unfiltered by base branch on purpose: foundation work lands as stacked pull requests, and a
+  # `branches: [ main ]` filter would let every stacked PR report green without being built.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # The job name is the check name branch protection matches on. Treat it as an identifier.
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # 8.0.x is present only so the package-consumption step can execute its net8.0 target.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restore local tools
+        run: dotnet tool restore --disable-parallel
+
+      # CSharpier is the only C# layout formatter; IDE0055 is disabled so nothing fights it.
+      - name: Verify formatting (CSharpier)
+        run: dotnet csharpier check .
+
+      - name: Restore
+        run: dotnet restore Arrow.SourceGenerator.slnx
+
+      - name: Audit vulnerable packages
+        run: |
+          audit_output=$(dotnet list Arrow.SourceGenerator.slnx package --vulnerable --include-transitive)
+          echo "$audit_output"
+          if echo "$audit_output" | grep -qi 'has the following vulnerable packages'; then
+            echo "::error::Vulnerable packages detected."
+            exit 1
+          fi
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build Arrow.SourceGenerator.slnx --configuration Release --no-restore -warnaserror
+
+      - name: Test
+        run: >-
+          dotnet test Arrow.SourceGenerator.slnx --configuration Release --no-build
+          --collect:"XPlat Code Coverage" --results-directory ./test-results
+
+      # `dotnet run` executes under CoreCLR and ignores PublishAot, so it proves nothing about
+      # Native AOT. This publishes with a runtime identifier (the ILCompiler fails on AOT
+      # violations), rejects trim/AOT warnings attributable to this repository, and then executes
+      # the native binary directly. The program throws on any mismatch.
+      - name: Verify Native AOT (publish and run the native binary)
+        run: |
+          set -euo pipefail
+          dotnet publish test/Arrow.SourceGenerator.AotTest/Arrow.SourceGenerator.AotTest.csproj \
+            --configuration Release -r linux-x64 -o ./aot-out 2>&1 | tee aot-publish.log
+          test -x ./aot-out/Arrow.SourceGenerator.AotTest \
+            || { echo "::error::no native executable produced"; exit 1; }
+          if grep -E 'warning IL[0-9]+' aot-publish.log | grep -q .; then
+            echo "::error::trim/AOT warnings reported during publish:"
+            grep -E 'warning IL[0-9]+' aot-publish.log
+            exit 1
+          fi
+          ./aot-out/Arrow.SourceGenerator.AotTest
+
+      - name: Pack
+        run: dotnet pack Arrow.SourceGenerator.slnx --configuration Release --no-build --output ./artifacts
+
+      - name: Verify package layout
+        run: |
+          set -euo pipefail
+          cd artifacts
+          gen=$(ls Arrow.SourceGenerator.[0-9]*.nupkg)
+          attrs=$(ls Arrow.SourceGenerator.Attributes.*.nupkg)
+          echo "::group::$gen"; unzip -Z1 "$gen"; echo "::endgroup::"
+          echo "::group::$attrs"; unzip -Z1 "$attrs"; echo "::endgroup::"
+
+          # Analyzer-only: a lib/ entry would let consumers compile against generator internals.
+          unzip -Z1 "$gen" | grep -q '^analyzers/dotnet/cs/Arrow\.SourceGenerator\.dll$' \
+            || { echo "::error::generator missing from analyzers/dotnet/cs/"; exit 1; }
+          if unzip -Z1 "$gen" | grep -q '^lib/'; then
+            echo "::error::generator package contains lib/ entries; it must be analyzer-only"
+            exit 1
+          fi
+
+          # Generated code references the attributes, so the dependency must be declared.
+          unzip -p "$gen" '*.nuspec' | grep -q 'id="Arrow.SourceGenerator.Attributes"' \
+            || { echo "::error::generator .nuspec does not depend on the Attributes package"; exit 1; }
+          unzip -Z1 "$attrs" | grep -q '^lib/netstandard2.0/Arrow\.SourceGenerator\.Attributes\.dll$' \
+            || { echo "::error::attributes package missing lib/netstandard2.0"; exit 1; }
+          echo "Package layout OK."
+
+      - name: Verify package consumption (.NET 8 and .NET 10)
+        run: |
+          set -euo pipefail
+          version=$(ls artifacts/Arrow.SourceGenerator.[0-9]*.nupkg \
+            | sed -E 's/.*Arrow\.SourceGenerator\.([0-9][^/]*)\.nupkg/\1/')
+          for tfm in net8.0 net10.0; do
+            dotnet run --project test/Arrow.SourceGenerator.PackageConsumption \
+              --framework "$tfm" --configuration Release \
+              -p:GeneratorPackageVersion="$version" \
+              -p:RestorePackagesPath="$RUNNER_TEMP/consumption-$tfm"
+          done
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: code-coverage
+          path: test-results/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
+      - name: Upload packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nuget-packages
+          path: ./artifacts/*.nupkg

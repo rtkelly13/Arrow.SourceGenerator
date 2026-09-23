@@ -1,0 +1,6 @@
+<Project>
+    <!-- Central package management is off here; versions come from the command line. -->
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+</Project>

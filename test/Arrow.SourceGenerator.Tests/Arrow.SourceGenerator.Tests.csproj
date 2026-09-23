@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsTestProject>true</IsTestProject>
+        <RootNamespace>Arrow.SourceGenerator.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+        <PackageReference Include="Apache.Arrow" />
+        <PackageReference Include="Shouldly" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Arrow.SourceGenerator.Attributes\Arrow.SourceGenerator.Attributes.csproj" />
+        <!--
+      ReferenceOutputAssembly="true" is unique to this project: it unit-tests generator internals
+      (through InternalsVisibleTo) as well as running the generator over its own models. Every
+      other consumer in the repository uses "false", which is what a package consumer gets.
+    -->
+        <ProjectReference
+            Include="..\..\src\Arrow.SourceGenerator\Arrow.SourceGenerator.csproj"
+            OutputItemType="Analyzer"
+            ReferenceOutputAssembly="true"
+        />
+    </ItemGroup>
+
+    <!-- Golden inputs are compiled by the in-memory generator driver, never by this build. -->
+    <ItemGroup>
+        <Compile Remove="GoldenFiles\**" />
+        <None Include="GoldenFiles\**" />
+    </ItemGroup>
+</Project>
