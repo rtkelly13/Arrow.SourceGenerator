@@ -16,6 +16,18 @@ internal static class DiagnosticDescriptors
 {
     private const string Category = "Arrow.SourceGenerator";
 
+    public static readonly DiagnosticDescriptor UnsupportedMemberType = Error(
+        "ARROW001",
+        "Unsupported member type",
+        "Member '{0}' of '{1}' has type '{2}', which has no Arrow mapping; mark it [ArrowIgnore] or use a supported type (docs/02-TYPE-MAPPING.md)"
+    );
+
+    public static readonly DiagnosticDescriptor InvalidDecimal = Error(
+        "ARROW002",
+        "Invalid decimal precision/scale",
+        "Member '{0}' of '{1}': {2}"
+    );
+
     public static readonly DiagnosticDescriptor MustBePartial = Error(
         "ARROW008",
         "Arrow target must be partial",
@@ -80,6 +92,12 @@ internal static class DiagnosticDescriptors
         "ARROW019",
         "Ambiguous constructor",
         "'{0}' has more than one constructor with {1} parameters that bind to mapped members; the generated reader cannot choose between them"
+    );
+
+    public static readonly DiagnosticDescriptor ApacheArrowNotReferenced = Error(
+        "ARROW020",
+        "Apache.Arrow is not referenced",
+        "'{0}' is marked [ArrowSerializable] but the project does not reference Apache.Arrow, which the generated code calls; add a package reference to Apache.Arrow"
     );
 
     private static DiagnosticDescriptor Error(string id, string title, string message) =>

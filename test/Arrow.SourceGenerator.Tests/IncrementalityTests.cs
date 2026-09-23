@@ -72,7 +72,8 @@ public sealed class IncrementalityTests
         (GeneratorDriver driver, CSharpCompilation compilation) = FirstRun();
         GeneratorRunResult result = Rerun(driver, compilation, 2, Unrelated.Replace("= 1", "= 2"));
 
-        Reasons(result, TrackingNames.Model).ShouldAllBe(r => r == IncrementalStepRunReason.Cached);
+        Reasons(result, TrackingNames.EmissionPlan)
+            .ShouldAllBe(r => r == IncrementalStepRunReason.Cached);
         result
             .TrackedOutputSteps.SelectMany(p => p.Value)
             .SelectMany(s => s.Outputs)
@@ -90,7 +91,7 @@ public sealed class IncrementalityTests
             ModelA.Replace("public int Id", "public long Id")
         );
 
-        var reasons = Reasons(result, TrackingNames.Model).ToList();
+        var reasons = Reasons(result, TrackingNames.EmissionPlan).ToList();
         reasons.Count(r => r == IncrementalStepRunReason.Modified).ShouldBe(1);
         reasons
             .Count(r => r is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged)
@@ -107,7 +108,7 @@ public sealed class IncrementalityTests
         (GeneratorDriver driver, CSharpCompilation compilation) = FirstRun();
         GeneratorRunResult result = Rerun(driver, compilation, 0, "\n\n// moved\n" + ModelA);
 
-        Reasons(result, TrackingNames.Model)
+        Reasons(result, TrackingNames.EmissionPlan)
             .ShouldAllBe(r =>
                 r == IncrementalStepRunReason.Cached || r == IncrementalStepRunReason.Unchanged
             );
@@ -123,7 +124,7 @@ public sealed class IncrementalityTests
             string step in new[]
             {
                 TrackingNames.Parse,
-                TrackingNames.Model,
+                TrackingNames.EmissionPlan,
                 TrackingNames.Diagnostics,
             }
         )

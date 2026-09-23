@@ -121,7 +121,11 @@ internal static class MemberCollector
             .ThenBy(item => item.Column.Order ?? 0)
             .ThenBy(item => item.DeclarationIndex)
             .Select(item => new CollectedMember(
-                CreateModel(item.Property, item.Column.Name ?? item.Property.Name),
+                CreateModel(
+                    item.Property,
+                    item.Column.Name ?? item.Property.Name,
+                    ReadAnnotations(item.Property, positional)
+                ),
                 item.Property
             ))
             .ToList();
@@ -176,7 +180,11 @@ internal static class MemberCollector
         }
     }
 
-    private static MemberModel CreateModel(IPropertySymbol property, string fieldName)
+    private static MemberModel CreateModel(
+        IPropertySymbol property,
+        string fieldName,
+        MemberAnnotations annotations
+    )
     {
         (TypeRef type, bool nullable) = TypeClassifier.Classify(
             property.Type,
@@ -189,7 +197,31 @@ internal static class MemberCollector
             Type: type,
             IsNullable: nullable,
             IsAssignable: property.SetMethod is { } setter && IsReachable(setter),
-            IsRequired: property.IsRequired
+            IsRequired: property.IsRequired,
+            Annotations: annotations
+        );
+    }
+
+    private static MemberAnnotations ReadAnnotations(
+        IPropertySymbol property,
+        Dictionary<string, IParameterSymbol> positional
+    )
+    {
+        AttributeData? decimalAttribute =
+            FindAttribute(property, AttributeNames.Decimal)
+            ?? (
+                positional.TryGetValue(property.Name, out IParameterSymbol? parameter)
+                    ? FindAttribute(parameter, AttributeNames.Decimal)
+                    : null
+            );
+        if (decimalAttribute is not { ConstructorArguments.Length: 2 } found)
+        {
+            return MemberAnnotations.None;
+        }
+
+        return new MemberAnnotations(
+            found.ConstructorArguments[0].Value as int?,
+            found.ConstructorArguments[1].Value as int?
         );
     }
 
@@ -300,6 +332,29 @@ internal static class MemberCollector
     private static bool HasAttribute(ISymbol symbol, string fullName) =>
         FindAttribute(symbol, fullName) is not null;
 
-    private static AttributeData? FindAttribute(ISymbol symbol, string fullName) =>
-        symbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == fullName);
+    /// <summary>
+    /// The attribute on <paramref name="symbol"/>, or for a property override the nearest one on
+    /// the property it overrides. The Arrow member attributes are <c>Inherited = true</c>, but
+    /// Roslyn's <c>GetAttributes()</c> returns only those written on the symbol itself, and member
+    /// collection keeps the override in place of the base declaration.
+    /// </summary>
+    private static AttributeData? FindAttribute(ISymbol symbol, string fullName)
+    {
+        for (
+            ISymbol? current = symbol;
+            current is not null;
+            current = (current as IPropertySymbol)?.OverriddenProperty
+        )
+        {
+            AttributeData? found = current
+                .GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == fullName);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
 }

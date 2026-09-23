@@ -9,5 +9,45 @@ namespace Golden.Events
     /// </summary>
     public static partial class ScalarEventArrow
     {
+        /// <summary>
+        /// The Apache Arrow schema of <see cref="global::Golden.Events.ScalarEvent"/>: one field per mapped member,
+        /// in field order. Built once and shared; Apache.Arrow schemas are immutable.
+        /// </summary>
+        public static global::Apache.Arrow.Schema Schema { get; } = CreateSchema();
+
+        private static global::Apache.Arrow.Schema CreateSchema()
+        {
+            var fields = new global::Apache.Arrow.Field[]
+            {
+                new global::Apache.Arrow.Field("Flag", global::Apache.Arrow.Types.BooleanType.Default, nullable: false),
+                new global::Apache.Arrow.Field("Tiny", global::Apache.Arrow.Types.Int8Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("UnsignedTiny", global::Apache.Arrow.Types.UInt8Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("Small", global::Apache.Arrow.Types.Int16Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("UnsignedSmall", global::Apache.Arrow.Types.UInt16Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("Count", global::Apache.Arrow.Types.Int32Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("UnsignedCount", global::Apache.Arrow.Types.UInt32Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("Id", global::Apache.Arrow.Types.Int64Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("UnsignedId", global::Apache.Arrow.Types.UInt64Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("Ratio", global::Apache.Arrow.Types.FloatType.Default, nullable: false),
+                new global::Apache.Arrow.Field("Score", global::Apache.Arrow.Types.DoubleType.Default, nullable: false),
+                new global::Apache.Arrow.Field("Name", global::Apache.Arrow.Types.StringType.Default, nullable: false),
+                new global::Apache.Arrow.Field("Note", global::Apache.Arrow.Types.StringType.Default, nullable: true),
+                new global::Apache.Arrow.Field("Payload", global::Apache.Arrow.Types.BinaryType.Default, nullable: false),
+                new global::Apache.Arrow.Field("OptionalPayload", global::Apache.Arrow.Types.BinaryType.Default, nullable: true),
+                new global::Apache.Arrow.Field("Amount", new global::Apache.Arrow.Types.Decimal128Type(38, 18), nullable: false),
+                new global::Apache.Arrow.Field("Day", global::Apache.Arrow.Types.Date32Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("At", new global::Apache.Arrow.Types.Time64Type(global::Apache.Arrow.Types.TimeUnit.Microsecond), nullable: false),
+                new global::Apache.Arrow.Field("LocalWallClock", new global::Apache.Arrow.Types.TimestampType(global::Apache.Arrow.Types.TimeUnit.Microsecond, (string?)null), nullable: false),
+                new global::Apache.Arrow.Field("OccurredAt", new global::Apache.Arrow.Types.TimestampType(global::Apache.Arrow.Types.TimeUnit.Microsecond, "UTC"), nullable: false),
+                new global::Apache.Arrow.Field("Elapsed", global::Apache.Arrow.Types.DurationType.Microsecond, nullable: false),
+                new global::Apache.Arrow.Field("CorrelationId", new global::Apache.Arrow.Types.FixedSizeBinaryType(16), nullable: false),
+                new global::Apache.Arrow.Field("Priority", global::Apache.Arrow.Types.UInt8Type.Default, nullable: false),
+                new global::Apache.Arrow.Field("MaybeCount", global::Apache.Arrow.Types.Int32Type.Default, nullable: true),
+                new global::Apache.Arrow.Field("MaybeCorrelationId", new global::Apache.Arrow.Types.FixedSizeBinaryType(16), nullable: true),
+                new global::Apache.Arrow.Field("MaybeOccurredAt", new global::Apache.Arrow.Types.TimestampType(global::Apache.Arrow.Types.TimeUnit.Microsecond, "UTC"), nullable: true),
+                new global::Apache.Arrow.Field("MaybePriority", global::Apache.Arrow.Types.UInt8Type.Default, nullable: true),
+            };
+            return new global::Apache.Arrow.Schema(fields, null);
+        }
     }
 }

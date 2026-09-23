@@ -11,6 +11,22 @@ namespace Golden.@namespace
         /// </summary>
         public static partial class KeywordAndEscapingArrow
         {
+            /// <summary>
+            /// The Apache Arrow schema of <see cref="global::Golden.@namespace.Outer.KeywordAndEscaping"/>: one field per mapped member,
+            /// in field order. Built once and shared; Apache.Arrow schemas are immutable.
+            /// </summary>
+            public static global::Apache.Arrow.Schema Schema { get; } = CreateSchema();
+
+            private static global::Apache.Arrow.Schema CreateSchema()
+            {
+                var fields = new global::Apache.Arrow.Field[]
+                {
+                    new global::Apache.Arrow.Field("quote\"back\\slash", global::Apache.Arrow.Types.Int32Type.Default, nullable: false),
+                    new global::Apache.Arrow.Field("new\nline <xml> & */", global::Apache.Arrow.Types.StringType.Default, nullable: true),
+                    new global::Apache.Arrow.Field("unicode-é-中", global::Apache.Arrow.Types.Int64Type.Default, nullable: false),
+                };
+                return new global::Apache.Arrow.Schema(fields, null);
+            }
         }
     }
 }

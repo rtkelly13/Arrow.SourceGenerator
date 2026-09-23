@@ -9,3 +9,7 @@ Arrow.SourceGenerator.ArrowIgnoreAttribute
 Arrow.SourceGenerator.ArrowIgnoreAttribute.ArrowIgnoreAttribute() -> void
 Arrow.SourceGenerator.ArrowSerializableAttribute
 Arrow.SourceGenerator.ArrowSerializableAttribute.ArrowSerializableAttribute() -> void
+Arrow.SourceGenerator.ArrowDecimalAttribute
+Arrow.SourceGenerator.ArrowDecimalAttribute.ArrowDecimalAttribute(int precision, int scale) -> void
+Arrow.SourceGenerator.ArrowDecimalAttribute.Precision.get -> int
+Arrow.SourceGenerator.ArrowDecimalAttribute.Scale.get -> int

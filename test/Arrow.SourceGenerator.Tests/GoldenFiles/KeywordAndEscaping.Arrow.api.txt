@@ -1,2 +1,3 @@
 #nullable enable
 static Golden.@namespace.Outer.KeywordAndEscapingArrow
+static Golden.@namespace.Outer.KeywordAndEscapingArrow.Schema.get -> Apache.Arrow.Schema

@@ -5,6 +5,8 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
+ARROW001 | Arrow.SourceGenerator | Error | Unsupported member type
+ARROW002 | Arrow.SourceGenerator | Error | Invalid decimal precision/scale
 ARROW008 | Arrow.SourceGenerator | Error | Arrow target must be partial
 ARROW009 | Arrow.SourceGenerator | Error | Containing type of an Arrow target must be partial
 ARROW010 | Arrow.SourceGenerator | Error | Unsupported Arrow target
@@ -16,3 +18,4 @@ ARROW015 | Arrow.SourceGenerator | Error | No usable constructor
 ARROW016 | Arrow.SourceGenerator | Warning | Public field is not mapped
 ARROW018 | Arrow.SourceGenerator | Error | Required member is not mapped
 ARROW019 | Arrow.SourceGenerator | Error | Ambiguous constructor
+ARROW020 | Arrow.SourceGenerator | Error | Apache.Arrow is not referenced

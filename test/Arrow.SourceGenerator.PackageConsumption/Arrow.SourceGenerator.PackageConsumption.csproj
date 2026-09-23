@@ -4,8 +4,10 @@
 
       dotnet run -f net10.0 -p:GeneratorPackageVersion=<version>
 
-    ApacheArrowVersion is a parameter so the supported-version matrix (docs/05-COMPATIBILITY.md)
-    can compile the same consumer against the floor and the newest intended release.
+    Apache.Arrow is deliberately not referenced by default: it must arrive transitively through the
+    Attributes package, exactly as it does for a consumer who installs only Arrow.SourceGenerator.
+    ApacheArrowVersion lifts it to a specific release for the supported-version matrix
+    (docs/05-COMPATIBILITY.md), compiling the same consumer against the newest intended release.
   -->
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -15,11 +17,14 @@
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <GeneratorPackageVersion Condition="'$(GeneratorPackageVersion)' == ''"
             >0.0.1</GeneratorPackageVersion>
-        <ApacheArrowVersion Condition="'$(ApacheArrowVersion)' == ''">23.0.0</ApacheArrowVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Arrow.SourceGenerator" Version="$(GeneratorPackageVersion)" />
-        <PackageReference Include="Apache.Arrow" Version="$(ApacheArrowVersion)" />
+        <PackageReference
+            Include="Apache.Arrow"
+            Version="$(ApacheArrowVersion)"
+            Condition="'$(ApacheArrowVersion)' != ''"
+        />
     </ItemGroup>
 </Project>

@@ -16,6 +16,7 @@ internal static class Program
     {
         HandWrittenBaselineRoundTripsThroughIpc();
         GeneratedCompanionExists();
+        GeneratedSchemaMatchesTheModel();
 
         Console.WriteLine($"Arrow.SourceGenerator AOT checks passed: {_checks}");
         return 0;
@@ -54,6 +55,15 @@ internal static class Program
             typeof(AotOrderArrow).IsAbstract && typeof(AotOrderArrow).IsSealed,
             "companion is static"
         );
+
+    private static void GeneratedSchemaMatchesTheModel()
+    {
+        Schema schema = AotOrderArrow.Schema;
+        Check(schema.FieldsList.Count == 3, "schema field count");
+        Check(schema.GetFieldByName("Id").DataType.TypeId == ArrowTypeId.Int64, "schema int64");
+        Check(!schema.GetFieldByName("Customer").IsNullable, "schema required utf8");
+        Check(schema.GetFieldByName("Quantity").IsNullable, "schema nullable int32");
+    }
 
     internal static RecordBatch IpcRoundTrip(RecordBatch batch)
     {

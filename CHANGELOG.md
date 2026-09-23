@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Foundation 2: Arrow planning and the generated `{Type}Arrow.Schema`. P0 scalar mapping table
+  (`docs/02-TYPE-MAPPING.md`), `[ArrowDecimal(p, s)]`, an immutable `EmissionPlan` shared by all
+  emitters, ARROW001 (unsupported member type), ARROW002 (invalid decimal), ARROW020 (Apache.Arrow
+  not referenced), and the public API budget gate (`docs/01-PUBLIC-API.md`). The Attributes
+  package now declares the Apache.Arrow 23.0.0 floor.
 - Foundation 1: `[ArrowSerializable]`, `[ArrowColumn]`, `[ArrowIgnore]`; symbol-keyed discovery via
   `ForAttributeWithMetadataName` (one output per type, however many partial declarations); an
   immutable, value-equatable C# model with no Roslyn objects in cached state; constructor binding
