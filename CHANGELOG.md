@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Foundation 4: `{Type}Arrow.FromRecordBatch(batch)` and lazy `FromRecordBatches(batches)`. Strict,
+  aggregated validation once per batch (names, types, type parameters, timestamp semantics,
+  dictionary/extension rejection, schema/array agreement, lengths, required-field nulls, buffer and
+  offset soundness); range-checked temporal conversion; an exact Decimal128 reader that never rounds
+  (Apache.Arrow's `GetValue` does). Positional records, init-only and required members materialise.
 - Foundation 3: `{Type}Arrow.ToRecordBatch(rows)` and lazy `ToRecordBatches(rows, batchSize)`.
   Column-at-a-time conversion into exactly reserved Arrow buffers; validity bitmaps only when a
   column has nulls; clear errors for null rows, null non-nullable members, decimals that do not fit,

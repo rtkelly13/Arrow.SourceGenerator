@@ -40,4 +40,7 @@ public class ConversionBenchmarks
     [Benchmark(Baseline = true), BenchmarkCategory("FromRecordBatch")]
     public BenchmarkRow[] HandWritten_FromRecordBatch() =>
         HandWrittenArrow.FromRecordBatch(_batch!);
+
+    [Benchmark, BenchmarkCategory("FromRecordBatch")]
+    public BenchmarkRow[] Generated_FromRecordBatch() => BenchmarkRowArrow.FromRecordBatch(_batch!);
 }
