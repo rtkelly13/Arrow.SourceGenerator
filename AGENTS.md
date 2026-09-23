@@ -12,7 +12,8 @@
    and run `dotnet csharpier format .`. Do not reintroduce `dotnet format`.
 5. **Local scratch space** goes in `/temp/` and a local `TODO.md`; both are gitignored.
 6. **Golden files are refreshed, never hand-edited**: `UPDATE_GOLDEN_FILES=true dotnet test`, then
-   review the diff. A missing golden file fails the run.
+   review the diff. A missing golden file fails the run, the refresh included; add a new one with
+   `UPDATE_GOLDEN_FILES=create`.
 
 ## Architectural invariants
 

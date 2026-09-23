@@ -16,11 +16,12 @@ public sealed partial class WorkflowPolicyTests
     public static TheoryData<string> Workflows()
     {
         var data = new TheoryData<string>();
+        // GitHub runs both extensions; a .yaml workflow must not escape the pinning rule.
+        string workflows = Path.Combine(RepositoryRoot, ".github", "workflows");
         foreach (
-            string path in Directory.EnumerateFiles(
-                Path.Combine(RepositoryRoot, ".github", "workflows"),
-                "*.yml"
-            )
+            string path in Directory
+                .EnumerateFiles(workflows, "*.yml")
+                .Concat(Directory.EnumerateFiles(workflows, "*.yaml"))
         )
         {
             data.Add(Path.GetFileName(path));

@@ -29,8 +29,9 @@ checked-in artefacts:
 | `<Model>.Arrow.api.shape.txt` | Public-surface budget — type, member and parameter counts. |
 
 Refresh with `UPDATE_GOLDEN_FILES=true dotnet test` and review the diff. An `.api.txt` diff is an
-API change and must be explained in the pull request. A missing baseline fails the run; it is never
-created implicitly.
+API change and must be explained in the pull request. A missing baseline fails the run, the refresh
+included; it is never created implicitly. Add a new baseline deliberately with
+`UPDATE_GOLDEN_FILES=create dotnet test`.
 
 ## Native AOT
 

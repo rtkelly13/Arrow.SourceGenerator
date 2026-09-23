@@ -7,8 +7,9 @@ namespace Arrow.SourceGenerator.Tests.Infrastructure;
 /// </summary>
 /// <remarks>
 /// A missing golden file is a failure, never a silent first-run write: a baseline that creates
-/// itself cannot catch the change that deleted it. Refresh deliberately with
-/// <c>UPDATE_GOLDEN_FILES=true dotnet test</c> and review the diff.
+/// itself cannot catch the change that deleted it. Refresh existing goldens with
+/// <c>UPDATE_GOLDEN_FILES=true dotnet test</c>; add a new one with <c>UPDATE_GOLDEN_FILES=create</c>.
+/// Review the diff either way.
 /// </remarks>
 internal static class GoldenFile
 {
@@ -22,6 +23,14 @@ internal static class GoldenFile
             StringComparison.OrdinalIgnoreCase
         );
 
+    /// <summary>Like <see cref="UpdateRequested"/>, and also writes goldens that do not exist yet.</summary>
+    public static bool CreateRequested =>
+        string.Equals(
+            Environment.GetEnvironmentVariable("UPDATE_GOLDEN_FILES"),
+            "create",
+            StringComparison.OrdinalIgnoreCase
+        );
+
     public static string ReadInput(string relativePath) =>
         File.ReadAllText(Path.Combine(Directory, relativePath));
 
@@ -31,19 +40,23 @@ internal static class GoldenFile
         string path = Path.Combine(Directory, fileName);
         string normalized = Normalize(actual);
 
-        if (UpdateRequested)
+        // Checked before the update branch: a refresh rewrites existing baselines only, so a
+        // deleted golden cannot quietly reappear during the very command that refreshes the rest.
+        // A new golden is created deliberately with UPDATE_GOLDEN_FILES=create.
+        if (!File.Exists(path) && !CreateRequested)
+        {
+            throw new ShouldAssertException(
+                $"Golden file GoldenFiles/{fileName} is missing. Neither a normal run nor a refresh "
+                    + "creates one; add it deliberately with UPDATE_GOLDEN_FILES=create, review the "
+                    + "result and commit it."
+            );
+        }
+
+        if (UpdateRequested || CreateRequested)
         {
             System.IO.Directory.CreateDirectory(Directory);
             File.WriteAllText(path, normalized);
             return;
-        }
-
-        if (!File.Exists(path))
-        {
-            throw new ShouldAssertException(
-                $"Golden file GoldenFiles/{fileName} is missing. A normal run never creates one; "
-                    + "run the tests with UPDATE_GOLDEN_FILES=true, review the result and commit it."
-            );
         }
 
         string expected = Normalize(File.ReadAllText(path));
