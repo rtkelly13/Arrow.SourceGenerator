@@ -89,12 +89,10 @@ dotnet_diagnostic.CA1515.severity = none # Consider making public types internal
 dotnet_diagnostic.CA1822.severity = none # Mark members as static
 dotnet_diagnostic.CA2007.severity = none # ConfigureAwait
 dotnet_diagnostic.CA1861.severity = none # Constant arrays as arguments
+dotnet_diagnostic.CA1859.severity = none # Concrete return types for performance
 dotnet_diagnostic.xUnit1004.severity = warning
 dotnet_diagnostic.xUnit1026.severity = warning
 dotnet_diagnostic.xUnit2013.severity = warning
-
-[samples/**.cs]
-dotnet_diagnostic.category-Meziantou.severity = none
 
 # Golden files are generator output checked in verbatim; they are never compiled by this build.
 [test/Arrow.SourceGenerator.Tests/GoldenFiles/**.g.cs]

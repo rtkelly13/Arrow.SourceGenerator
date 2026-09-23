@@ -38,5 +38,5 @@ emission all consume the plan it produces, so they cannot disagree.
 
 Any other member type is a compile-time error, **ARROW001**, never a silently missing field or
 API. `char`, collections, nested classes and arbitrary types fall here until structural types
-(Foundation 8) or a type adapter (Foundation 6) cover them. Mark such a member `[ArrowIgnore]` to
+(Foundation 8) or a type adapter cover them (docs/04-ADAPTERS.md). Mark such a member `[ArrowIgnore]` to
 exclude it.

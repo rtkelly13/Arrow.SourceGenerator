@@ -183,10 +183,17 @@ internal static class FromRecordBatchEmitter
             _ => throw new System.ArgumentOutOfRangeException(nameof(field)),
         };
 
+        string memberType = field.ClrType;
+        if (field.Adapter is { } adapter)
+        {
+            value = $"{adapter.AdapterType}.FromStorage({value})";
+            memberType = adapter.DomainType;
+        }
+
         return field.Nulls switch
         {
             NullStrategy.Required => value,
-            NullStrategy.NullableValue => $"{c}.IsNull(i) ? null : ({field.ClrType}?){value}",
+            NullStrategy.NullableValue => $"{c}.IsNull(i) ? null : ({memberType}?){value}",
             _ => $"{c}.IsNull(i) ? null : {value}",
         };
     }

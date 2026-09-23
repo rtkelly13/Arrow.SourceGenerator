@@ -9,6 +9,7 @@ internal static class TrackingNames
     public const string Parse = "Arrow.Parse";
     public const string Diagnostics = "Arrow.Diagnostics";
     public const string ArrowReference = "Arrow.ArrowReference";
+    public const string AdapterRegistry = "Arrow.AdapterRegistry";
     public const string Plan = "Arrow.Plan";
     public const string PlanDiagnostics = "Arrow.PlanDiagnostics";
     public const string EmissionPlan = "Arrow.EmissionPlan";

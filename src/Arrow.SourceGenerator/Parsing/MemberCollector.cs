@@ -124,7 +124,7 @@ internal static class MemberCollector
                 CreateModel(
                     item.Property,
                     item.Column.Name ?? item.Property.Name,
-                    ReadAnnotations(item.Property, positional)
+                    ReadAnnotations(item.Property, positional, type, diagnostics)
                 ),
                 item.Property
             ))
@@ -204,9 +204,12 @@ internal static class MemberCollector
 
     private static MemberAnnotations ReadAnnotations(
         IPropertySymbol property,
-        Dictionary<string, IParameterSymbol> positional
+        Dictionary<string, IParameterSymbol> positional,
+        INamedTypeSymbol target,
+        List<DiagnosticInfo> diagnostics
     )
     {
+        AdapterModel? adapter = ReadAdapter(property, positional, target, diagnostics);
         AttributeData? decimalAttribute =
             FindAttribute(property, AttributeNames.Decimal)
             ?? (
@@ -216,13 +219,77 @@ internal static class MemberCollector
             );
         if (decimalAttribute is not { ConstructorArguments.Length: 2 } found)
         {
-            return MemberAnnotations.None;
+            return adapter is null
+                ? MemberAnnotations.None
+                : new MemberAnnotations(null, null, adapter);
         }
 
         return new MemberAnnotations(
             found.ConstructorArguments[0].Value as int?,
-            found.ConstructorArguments[1].Value as int?
+            found.ConstructorArguments[1].Value as int?,
+            adapter
         );
+    }
+
+    /// <summary>
+    /// Resolves and validates an explicit <c>[ArrowAdapter]</c>. Its domain type must be exactly
+    /// the member's type (nullability aside: nulls never reach an adapter).
+    /// </summary>
+    private static AdapterModel? ReadAdapter(
+        IPropertySymbol property,
+        Dictionary<string, IParameterSymbol> positional,
+        INamedTypeSymbol target,
+        List<DiagnosticInfo> diagnostics
+    )
+    {
+        AttributeData? attribute =
+            FindAttribute(property, AttributeNames.Adapter)
+            ?? (
+                positional.TryGetValue(property.Name, out IParameterSymbol? parameter)
+                    ? FindAttribute(parameter, AttributeNames.Adapter)
+                    : null
+            );
+        if (
+            attribute is not { ConstructorArguments.Length: 1 }
+            || attribute.ConstructorArguments[0].Value is not INamedTypeSymbol adapterType
+        )
+        {
+            return null;
+        }
+
+        LocationInfo? location = LocationInfo.From(property.Locations.FirstOrDefault());
+        bool external = !SymbolEqualityComparer.Default.Equals(
+            adapterType.ContainingAssembly,
+            target.ContainingAssembly
+        );
+        (AdapterModel? adapter, string? problem) = AdapterAnalyzer.Analyze(adapterType, external);
+        if (adapter is not null)
+        {
+            (TypeRef memberType, _) = TypeClassifier.Classify(
+                property.Type,
+                property.NullableAnnotation
+            );
+            if (memberType.FullyQualifiedName != adapter.DomainType)
+            {
+                problem =
+                    $"it converts '{adapter.DomainType.Replace("global::", "")}', but member '{property.Name}' is '{memberType.FullyQualifiedName.Replace("global::", "")}'";
+                adapter = null;
+            }
+        }
+
+        if (adapter is null)
+        {
+            diagnostics.Add(
+                DiagnosticInfo.Create(
+                    DiagnosticDescriptors.InvalidAdapter,
+                    location,
+                    adapterType.Name,
+                    problem!
+                )
+            );
+        }
+
+        return adapter;
     }
 
     /// <summary>Accessible from generated code in the same assembly but outside the type.</summary>

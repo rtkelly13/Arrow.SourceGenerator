@@ -62,7 +62,7 @@ internal static class Program
     private static void GeneratedSchemaMatchesTheModel()
     {
         Schema schema = AotOrderArrow.Schema;
-        Check(schema.FieldsList.Count == 9, "schema field count");
+        Check(schema.FieldsList.Count == 10, "schema field count");
         Check(schema.GetFieldByName("Id").DataType.TypeId == ArrowTypeId.Int64, "schema int64");
         Check(!schema.GetFieldByName("Customer").IsNullable, "schema required utf8");
         Check(schema.GetFieldByName("Quantity").IsNullable, "schema nullable int32");
@@ -81,6 +81,7 @@ internal static class Program
                 PlacedAt = new DateTimeOffset(2024, 2, 29, 12, 0, 0, TimeSpan.FromHours(1)),
                 Latency = TimeSpan.FromMilliseconds(15),
                 Reference = Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"),
+                Number = new OrderNumber(1001),
             },
             new AotOrder { Id = 2, Customer = "grace" },
         ];
@@ -121,6 +122,8 @@ internal static class Program
         Check(read[0].PlacedAt == expected[0].PlacedAt, "read utc instant");
         Check(read[0].Latency == expected[0].Latency && read[1].Latency is null, "read duration");
         Check(read[0].Reference == expected[0].Reference, "read guid");
+        Check(read[0].Number == new OrderNumber(1001), "read through adapter");
+        Check(((Int32Array)copy.Column(9)).GetValue(0) == 1001, "write through adapter");
 
         using var wrong = new RecordBatch(
             new Schema.Builder().Field(f => f.Name("Id").DataType(StringType.Default)).Build(),

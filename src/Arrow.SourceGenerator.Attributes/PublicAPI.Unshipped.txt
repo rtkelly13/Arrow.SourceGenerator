@@ -13,3 +13,9 @@ Arrow.SourceGenerator.ArrowDecimalAttribute
 Arrow.SourceGenerator.ArrowDecimalAttribute.ArrowDecimalAttribute(int precision, int scale) -> void
 Arrow.SourceGenerator.ArrowDecimalAttribute.Precision.get -> int
 Arrow.SourceGenerator.ArrowDecimalAttribute.Scale.get -> int
+Arrow.SourceGenerator.ArrowAdapterAttribute
+Arrow.SourceGenerator.ArrowAdapterAttribute.AdapterType.get -> System.Type!
+Arrow.SourceGenerator.ArrowAdapterAttribute.ArrowAdapterAttribute(System.Type! adapterType) -> void
+Arrow.SourceGenerator.ArrowTypeAdapterAttribute
+Arrow.SourceGenerator.ArrowTypeAdapterAttribute.AdapterType.get -> System.Type!
+Arrow.SourceGenerator.ArrowTypeAdapterAttribute.ArrowTypeAdapterAttribute(System.Type! adapterType) -> void

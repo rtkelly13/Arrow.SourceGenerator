@@ -46,10 +46,24 @@ internal sealed class ArrowIncrementalGenerator : IIncrementalGenerator
             )
             .WithTrackingName(TrackingNames.ArrowReference);
 
+        // Assembly-level adapter registrations, from this compilation and its references. Value
+        // equatable, so targets re-plan only when a registration actually changes.
+        IncrementalValueProvider<AdapterRegistry> registry = context
+            .CompilationProvider.Select(
+                static (compilation, _) => AdapterAnalyzer.ReadRegistry(compilation)
+            )
+            .WithTrackingName(TrackingNames.AdapterRegistry);
+
+        context.RegisterSourceOutput(registry.Select(static (r, _) => r.Diagnostics), ReportAll);
+
         IncrementalValuesProvider<PlanResult> planned = parsed
             .Where(static result => result.Model is not null)
             .Combine(arrowReferenced)
-            .Select(static (pair, _) => EmissionPlanner.Plan(pair.Left, pair.Right))
+            .Combine(registry)
+            .Select(
+                static (pair, _) =>
+                    EmissionPlanner.Plan(pair.Left.Left, pair.Left.Right, pair.Right)
+            )
             .WithTrackingName(TrackingNames.Plan);
 
         context.RegisterSourceOutput(

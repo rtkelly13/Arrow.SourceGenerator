@@ -64,6 +64,12 @@ jobs:
           dotnet test Arrow.SourceGenerator.slnx --configuration Release --no-build
           --collect:"XPlat Code Coverage" --results-directory ./test-results
 
+      - name: Run samples
+        run: |
+          set -euo pipefail
+          dotnet run --project samples/Basic --configuration Release --no-build
+          dotnet run --project samples/NodaTime --configuration Release --no-build
+
       # `dotnet run` executes under CoreCLR and ignores PublishAot, so it proves nothing about
       # Native AOT. This publishes with a runtime identifier (the ILCompiler fails on AOT
       # violations), rejects trim/AOT warnings attributable to this repository, and then executes

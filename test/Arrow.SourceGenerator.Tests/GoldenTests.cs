@@ -12,7 +12,8 @@ namespace Arrow.SourceGenerator.Tests;
 /// </summary>
 public sealed class GoldenTests
 {
-    public static TheoryData<string> Models() => ["ScalarEvent", "KeywordAndEscaping"];
+    public static TheoryData<string> Models() =>
+        ["ScalarEvent", "KeywordAndEscaping", "AdapterEvent"];
 
     [Theory]
     [MemberData(nameof(Models))]

@@ -1,4 +1,7 @@
 using Arrow.SourceGenerator;
+using Arrow.SourceGenerator.AotTest;
+
+[assembly: ArrowTypeAdapter(typeof(OrderNumberAdapter))]
 
 namespace Arrow.SourceGenerator.AotTest;
 
@@ -20,4 +23,15 @@ public partial class AotOrder
     public DateTimeOffset PlacedAt { get; set; }
     public TimeSpan? Latency { get; set; }
     public Guid Reference { get; set; }
+    public OrderNumber Number { get; set; }
+}
+
+/// <summary>A domain type stored through a registered adapter: a direct static call under AOT.</summary>
+public readonly record struct OrderNumber(int Value);
+
+public static class OrderNumberAdapter
+{
+    public static int ToStorage(OrderNumber value) => value.Value;
+
+    public static OrderNumber FromStorage(int storage) => new(storage);
 }

@@ -14,7 +14,10 @@ namespace Arrow.SourceGenerator.Planning;
 /// </summary>
 internal static class EmissionPlanner
 {
-    public static PlanResult Plan(ParseResult parse, bool arrowReferenced)
+    public static PlanResult Plan(ParseResult parse, bool arrowReferenced) =>
+        Plan(parse, arrowReferenced, AdapterRegistry.Empty);
+
+    public static PlanResult Plan(ParseResult parse, bool arrowReferenced, AdapterRegistry registry)
     {
         TargetModel model = parse.Model!;
         var diagnostics = new List<DiagnosticInfo>();
@@ -54,8 +57,24 @@ internal static class EmissionPlanner
             }
 
             if (
+                !TryResolveAdapter(
+                    member,
+                    model,
+                    registry,
+                    site,
+                    diagnostics,
+                    out AdapterModel? adapter
+                )
+            )
+            {
+                continue;
+            }
+
+            TypeRef storage = adapter?.Surrogate ?? member.Type;
+            if (
                 !TryResolveDecimal(
                     member,
+                    storage,
                     model,
                     site,
                     diagnostics,
@@ -67,17 +86,25 @@ internal static class EmissionPlanner
                 continue;
             }
 
-            ArrowLeafPlan? leaf = ArrowMappingTable.TryMap(member.Type, precision, scale);
+            ArrowLeafPlan? leaf = ArrowMappingTable.TryMap(storage, precision, scale);
             if (leaf is null)
             {
                 diagnostics.Add(
-                    DiagnosticInfo.Create(
-                        DiagnosticDescriptors.UnsupportedMemberType,
-                        site,
-                        member.Name,
-                        model.Name,
-                        member.Type.FullyQualifiedName.Replace("global::", "")
-                    )
+                    adapter is null
+                        ? DiagnosticInfo.Create(
+                            DiagnosticDescriptors.UnsupportedMemberType,
+                            site,
+                            member.Name,
+                            model.Name,
+                            Display(member.Type.FullyQualifiedName)
+                        )
+                        : DiagnosticInfo.Create(
+                            DiagnosticDescriptors.UnsupportedSurrogate,
+                            site,
+                            Display(adapter.AdapterType),
+                            member.Name,
+                            Display(storage.FullyQualifiedName)
+                        )
                 );
                 continue;
             }
@@ -89,12 +116,19 @@ internal static class EmissionPlanner
                     MemberIdentifier: SourceNames.Identifier(member.Name),
                     FieldName: member.FieldName,
                     FieldNameLiteral: SourceNames.StringLiteral(member.FieldName),
-                    ClrType: member.Type.FullyQualifiedName,
-                    IsValueType: member.Type.IsValueType,
+                    ClrType: storage.FullyQualifiedName,
+                    IsValueType: storage.IsValueType,
                     Leaf: leaf,
                     Nulls: !member.IsNullable ? NullStrategy.Required
                         : member.Type.IsValueType ? NullStrategy.NullableValue
-                        : NullStrategy.NullableReference
+                        : NullStrategy.NullableReference,
+                    Adapter: adapter is null
+                        ? null
+                        : new AdapterPlan(
+                            adapter.AdapterType,
+                            member.Type.FullyQualifiedName,
+                            member.Type.IsValueType
+                        )
                 )
             );
         }
@@ -105,8 +139,67 @@ internal static class EmissionPlanner
         return new PlanResult(plan, diagnostics.ToEquatableArray());
     }
 
+    /// <summary>
+    /// Adapter precedence (docs/04-ADAPTERS.md): the member's own <c>[ArrowAdapter]</c>; otherwise,
+    /// for a type with no built-in mapping, a registration in the compiling assembly, then one in a
+    /// referenced assembly. Two registrations at the deciding tier are ambiguous, never resolved by
+    /// order.
+    /// </summary>
+    private static bool TryResolveAdapter(
+        MemberModel member,
+        TargetModel model,
+        AdapterRegistry registry,
+        LocationInfo? site,
+        List<DiagnosticInfo> diagnostics,
+        out AdapterModel? adapter
+    )
+    {
+        adapter = member.Annotations.ExplicitAdapter;
+        if (adapter is not null || ArrowMappingTable.HasBuiltIn(member.Type))
+        {
+            return true;
+        }
+
+        for (int tier = 0; tier <= 1; tier++)
+        {
+            var matches = registry
+                .Registrations.Where(r =>
+                    r.Tier == tier && r.Adapter.DomainType == member.Type.FullyQualifiedName
+                )
+                .ToList();
+            if (matches.Count == 1)
+            {
+                adapter = matches[0].Adapter;
+                return true;
+            }
+
+            if (matches.Count > 1)
+            {
+                diagnostics.Add(
+                    DiagnosticInfo.Create(
+                        DiagnosticDescriptors.AmbiguousAdapter,
+                        site,
+                        member.Name,
+                        model.Name,
+                        Display(member.Type.FullyQualifiedName),
+                        string.Join(
+                            ", ",
+                            matches.Select(m => $"'{Display(m.Adapter.AdapterType)}' ({m.Source})")
+                        )
+                    )
+                );
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string Display(string fullyQualified) => fullyQualified.Replace("global::", "");
+
     private static bool TryResolveDecimal(
         MemberModel member,
+        TypeRef storage,
         TargetModel model,
         LocationInfo? site,
         List<DiagnosticInfo> diagnostics,
@@ -122,7 +215,7 @@ internal static class EmissionPlanner
         }
 
         string? problem;
-        if (member.Type.Kind != ClrTypeKind.Decimal)
+        if (storage.Kind != ClrTypeKind.Decimal)
         {
             problem = "[ArrowDecimal] applies only to decimal members";
         }

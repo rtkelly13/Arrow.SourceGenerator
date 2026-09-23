@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Foundation 6: static type adapters. `[assembly: ArrowTypeAdapter(typeof(A))]` registers
+  `A.ToStorage`/`A.FromStorage` as the default mapping for a type with no built-in mapping, in this
+  assembly and any that references it; `[ArrowAdapter(typeof(A))]` overrides per member (including
+  built-ins). Deterministic precedence (member, compiling assembly, referenced assembly), ARROW003
+  (unsupported surrogate), ARROW005 (ambiguous), ARROW017 (invalid adapter). Nulls never reach an
+  adapter. `docs/04-ADAPTERS.md`, `samples/Basic`, `samples/NodaTime`.
 - Foundation 5: `{Type}Arrow.View(batch)` returns a validated, zero-copy `{Type}ArrowView` with one
   typed Apache.Arrow array per field. ARROW021 rejects members named `Batch`/`Length`; ARROW011
   now also covers the view's name.

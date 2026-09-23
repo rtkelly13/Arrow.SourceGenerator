@@ -162,10 +162,67 @@ internal static class ToRecordBatchEmitter
         {
             writer.Line();
             EmitColumn(writer, context, field, rowsType);
+            if (field.Adapter is not null)
+            {
+                writer.Line();
+                EmitStoreAccessor(writer, context, field);
+            }
         }
     }
 
     private static string ColumnMethod(FieldPlan field) => "BuildColumn_" + field.MemberName;
+
+    /// <summary>
+    /// The expression producing a row's storage value: the member itself, or the member passed
+    /// through its adapter's <c>ToStorage</c> (by the <c>Store_</c> accessor, which keeps nulls away
+    /// from the adapter).
+    /// </summary>
+    private static string Access(FieldPlan field) =>
+        field.Adapter is null
+            ? $"row.{field.MemberIdentifier}"
+            : $"{StoreMethod(field)}(row, index)";
+
+    private static string StoreMethod(FieldPlan field) => "Store_" + field.MemberName;
+
+    private static void EmitStoreAccessor(
+        SourceWriter writer,
+        EmissionContext context,
+        FieldPlan field
+    )
+    {
+        AdapterPlan adapter = field.Adapter!;
+        string storage = field.IsNullable ? field.ClrType + "?" : field.ClrType;
+        writer.Line(
+            $"// {SourceNames.CommentText(field.FieldName)}: stored through {adapter.AdapterType}"
+        );
+        using (
+            writer.Block(
+                $"private static {storage} {StoreMethod(field)}({context.ModelType} row, int index)"
+            )
+        )
+        {
+            if (field.IsNullable)
+            {
+                writer.Line(
+                    $"return row.{field.MemberIdentifier} is {{ }} domain ? ({field.ClrType}?){adapter.AdapterType}.ToStorage(domain) : null;"
+                );
+            }
+            else if (adapter.DomainIsValueType)
+            {
+                writer.Line(
+                    $"return {adapter.AdapterType}.ToStorage(row.{field.MemberIdentifier});"
+                );
+            }
+            else
+            {
+                writer.Line(
+                    $"if (row.{field.MemberIdentifier} is {{ }} domain) return {adapter.AdapterType}.ToStorage(domain);"
+                );
+                writer.Line($"ThrowRequiredNull(index, {field.FieldNameLiteral});");
+                writer.Line("return default!;");
+            }
+        }
+    }
 
     private static void EmitColumn(
         SourceWriter writer,
@@ -249,7 +306,7 @@ internal static class ToRecordBatchEmitter
             EmitRowPreamble(writer, context);
             if (field.IsNullable)
             {
-                using (writer.Block($"if (row.{field.MemberIdentifier} is {{ }} value)"))
+                using (writer.Block($"if ({Access(field)} is {{ }} value)"))
                 {
                     writer.Line(AppendValue(field, "value"));
                     writer.Line("validity.Append(true);");
@@ -264,7 +321,7 @@ internal static class ToRecordBatchEmitter
             }
             else
             {
-                writer.Line($"var value = row.{field.MemberIdentifier};");
+                writer.Line($"var value = {Access(field)};");
                 writer.Line(AppendValue(field, "value"));
             }
 
@@ -302,12 +359,12 @@ internal static class ToRecordBatchEmitter
             EmitRowPreamble(writer, context);
             if (!field.IsNullable && field.IsValueType)
             {
-                writer.Line($"var value = row.{field.MemberIdentifier};");
+                writer.Line($"var value = {Access(field)};");
                 EmitAppend(writer, field, append);
             }
             else
             {
-                using (writer.Block($"if (row.{field.MemberIdentifier} is {{ }} value)"))
+                using (writer.Block($"if ({Access(field)} is {{ }} value)"))
                 {
                     EmitAppend(writer, field, append);
                 }
