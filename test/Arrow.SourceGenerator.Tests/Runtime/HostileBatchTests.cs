@@ -319,6 +319,49 @@ public sealed class HostileBatchTests
             );
     }
 
+    /// <summary>
+    /// Regression: an unscaled integer wider than 96 bits can still be exact once its trailing
+    /// decimal zeros are stripped. At the default (38, 18), 10^19 is stored as 10^37.
+    /// </summary>
+    [Theory]
+    [InlineData("10000000000000000000.000000000000000000", "10000000000000000000")]
+    [InlineData("-12345678901234567890.000000000000000000", "-12345678901234567890")]
+    [InlineData("12345678901234567890.123400000000000000", "12345678901234567890.1234")]
+    public void Decimal128WiderThan96BitsWithTrailingZerosIsExact(string stored, string expected)
+    {
+        using RecordBatch valid = ScalarRowArrow.ToRecordBatch([ToRecordBatchTests.Sample(1)]);
+        using RecordBatch batch = WithMoney(valid, stored);
+
+        ScalarRowArrow
+            .FromRecordBatch(batch)[0]
+            .Money.ShouldBe(
+                decimal.Parse(expected, System.Globalization.CultureInfo.InvariantCulture)
+            );
+    }
+
+    [Fact]
+    public void Decimal128StillTooWideAfterStrippingZerosIsReportedNotRounded()
+    {
+        // 30 significant digits after the trailing zeros go: one more than System.Decimal holds.
+        using RecordBatch valid = ScalarRowArrow.ToRecordBatch([ToRecordBatchTests.Sample(1)]);
+        using RecordBatch batch = WithMoney(valid, "12345678901234567890.123456789100000000");
+
+        Should
+            .Throw<InvalidDataException>(() => ScalarRowArrow.FromRecordBatch(batch))
+            .Message.ShouldBe(
+                "Row 0: the value in Arrow field 'Money' is outside the range of System.Decimal."
+            );
+    }
+
+    /// <summary>Replaces the Money column; the result shares <paramref name="valid"/>'s other columns.</summary>
+    private static RecordBatch WithMoney(RecordBatch valid, string value)
+    {
+        var type = new Decimal128Type(38, 18);
+        var builder = new Decimal128Array.Builder(type);
+        builder.Append(System.Data.SqlTypes.SqlDecimal.Parse(value));
+        return ReplaceColumn(valid, valid.Schema.GetFieldIndex("Money"), type, builder.Build());
+    }
+
     [Fact]
     public void Decimal128AtTheSystemDecimalLimitsIsExact()
     {

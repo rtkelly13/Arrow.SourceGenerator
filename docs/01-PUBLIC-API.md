@@ -70,8 +70,10 @@ The companion exposes a fixed set of operations that does **not** grow with the 
   decrease or run past the value buffer.
 
 Individual values that the CLR type cannot hold (a `Date32` past `DateOnly.MaxValue`, a
-`Decimal128` wider than `System.Decimal`'s 96 bits) fail with the row and field named. Nothing is
-rounded: this deliberately does not use `Decimal128Array.GetValue`, which rounds.
+`Decimal128` with more significant digits than `System.Decimal`'s 96 bits) fail with the row and
+field named. Trailing decimal zeros do not count: `10^19` at scale 18 is stored as `10^37`, but it
+reads exactly. Nothing is rounded: this deliberately does not use `Decimal128Array.GetValue`, which
+rounds.
 
 Construction: a positional record's primary constructor, or any reachable constructor whose
 parameters bind to mapped members, is called; remaining members are assigned through an object

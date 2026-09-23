@@ -1363,14 +1363,21 @@ namespace Golden.Events
 
         // Exact by construction. Apache.Arrow's Decimal128Array.GetValue rounds a value with more
         // significant digits than System.Decimal holds; this reads the 128-bit unscaled integer and
-        // accepts it only when it fits System.Decimal's 96-bit magnitude, so nothing is ever rounded.
+        // accepts it only when it is exactly representable in System.Decimal, so nothing is ever rounded.
         private static decimal ReadDecimal(global::Apache.Arrow.Decimal128Array array, int row, string field, byte scale)
         {
             global::System.Int128 unscaled = global::System.Buffers.Binary.BinaryPrimitives.ReadInt128LittleEndian(array.GetBytes(row));
             bool negative = unscaled < 0;
             if (unscaled == global::System.Int128.MinValue) throw OutOfRange(row, field, "System.Decimal");
             global::System.UInt128 magnitude = (global::System.UInt128)(negative ? -unscaled : unscaled);
-            if ((magnitude >> 96) != 0) throw OutOfRange(row, field, "System.Decimal");
+            // A wide unscaled integer can still be exact: trailing decimal zeros are stripped (reducing
+            // the scale) until it fits, so 10^19 at scale 18 reads as 10000000000000000000m.
+            while ((magnitude >> 96) != 0)
+            {
+                if (scale == 0 || magnitude % 10 != 0) throw OutOfRange(row, field, "System.Decimal");
+                magnitude /= 10;
+                scale--;
+            }
             return new decimal((int)(uint)magnitude, (int)(uint)(magnitude >> 32), (int)(uint)(magnitude >> 64), negative, scale);
         }
 

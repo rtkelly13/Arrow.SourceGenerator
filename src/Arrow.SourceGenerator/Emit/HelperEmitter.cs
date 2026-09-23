@@ -299,7 +299,7 @@ internal static class HelperEmitter
                 "// significant digits than System.Decimal holds; this reads the 128-bit unscaled integer and"
             );
             writer.Line(
-                "// accepts it only when it fits System.Decimal's 96-bit magnitude, so nothing is ever rounded."
+                "// accepts it only when it is exactly representable in System.Decimal, so nothing is ever rounded."
             );
             using (
                 writer.Block(
@@ -318,8 +318,20 @@ internal static class HelperEmitter
                     "global::System.UInt128 magnitude = (global::System.UInt128)(negative ? -unscaled : unscaled);"
                 );
                 writer.Line(
-                    "if ((magnitude >> 96) != 0) throw OutOfRange(row, field, \"System.Decimal\");"
+                    "// A wide unscaled integer can still be exact: trailing decimal zeros are stripped (reducing"
                 );
+                writer.Line(
+                    "// the scale) until it fits, so 10^19 at scale 18 reads as 10000000000000000000m."
+                );
+                using (writer.Block("while ((magnitude >> 96) != 0)"))
+                {
+                    writer.Line(
+                        "if (scale == 0 || magnitude % 10 != 0) throw OutOfRange(row, field, \"System.Decimal\");"
+                    );
+                    writer.Line("magnitude /= 10;");
+                    writer.Line("scale--;");
+                }
+
                 writer.Line(
                     "return new decimal((int)(uint)magnitude, (int)(uint)(magnitude >> 32), (int)(uint)(magnitude >> 64), negative, scale);"
                 );
