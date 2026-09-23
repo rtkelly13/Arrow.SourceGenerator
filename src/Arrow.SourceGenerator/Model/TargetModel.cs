@@ -52,8 +52,26 @@ internal sealed record MemberModel(
     TypeRef Type,
     bool IsNullable,
     bool IsAssignable,
-    bool IsRequired
+    bool IsRequired,
+    MemberAnnotations Annotations
 );
+
+/// <summary>
+/// Member-level annotations that refine planning, recorded as written. Validation belongs to
+/// planning, which knows what the member's type maps to.
+/// </summary>
+internal sealed record MemberAnnotations(int? DecimalPrecision, int? DecimalScale)
+{
+    public static MemberAnnotations None { get; } = new(null, null);
+
+    public bool HasDecimal => DecimalPrecision.HasValue;
+}
+
+/// <summary>
+/// Where a member is declared, kept beside the model rather than inside it so that moving a
+/// declaration does not invalidate emission (docs/00-DESIGN-GOALS.md section 10).
+/// </summary>
+internal sealed record MemberSite(string MemberName, LocationInfo? Location);
 
 /// <summary>
 /// A member's CLR type, stripped of nullability (<see cref="MemberModel.IsNullable"/> carries it).

@@ -9,4 +9,5 @@ internal static class AttributeNames
     public const string Serializable = "Arrow.SourceGenerator.ArrowSerializableAttribute";
     public const string Column = "Arrow.SourceGenerator.ArrowColumnAttribute";
     public const string Ignore = "Arrow.SourceGenerator.ArrowIgnoreAttribute";
+    public const string Decimal = "Arrow.SourceGenerator.ArrowDecimalAttribute";
 }

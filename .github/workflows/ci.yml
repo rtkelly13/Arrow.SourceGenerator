@@ -105,6 +105,9 @@ jobs:
           # Generated code references the attributes, so the dependency must be declared.
           unzip -p "$gen" '*.nuspec' | grep -q 'id="Arrow.SourceGenerator.Attributes"' \
             || { echo "::error::generator .nuspec does not depend on the Attributes package"; exit 1; }
+          # Generated code calls Apache.Arrow, so the contract package carries it and its floor.
+          unzip -p "$attrs" '*.nuspec' | grep -q 'id="Apache.Arrow" version="23.0.0"' \
+            || { echo "::error::attributes .nuspec does not declare the Apache.Arrow floor"; exit 1; }
           unzip -Z1 "$attrs" | grep -q '^lib/netstandard2.0/Arrow\.SourceGenerator\.Attributes\.dll$' \
             || { echo "::error::attributes package missing lib/netstandard2.0"; exit 1; }
           echo "Package layout OK."

@@ -1,6 +1,7 @@
 using Arrow.SourceGenerator.Emit;
 using Arrow.SourceGenerator.Model;
 using Arrow.SourceGenerator.Parsing;
+using Arrow.SourceGenerator.Planning;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -10,12 +11,14 @@ namespace Arrow.SourceGenerator;
 /// Roslyn incremental generator that maps <c>[ArrowSerializable]</c> models to Apache Arrow.
 /// </summary>
 /// <remarks>
-/// <para>Pipeline:</para>
+/// <para>Pipeline (docs/00-DESIGN-GOALS.md section 4):</para>
 /// <list type="number">
 ///   <item><description>Discovery — <c>ForAttributeWithMetadataName</c>, keyed on the type symbol.</description></item>
 ///   <item><description>Parsing — the symbol collapses into a value-equatable
 ///     <see cref="TargetModel"/> plus diagnostics. No Roslyn object survives this step.</description></item>
-///   <item><description>Emission — keyed on the model alone, so an edit that only moves a
+///   <item><description>Planning — the model and compilation facts resolve into one immutable
+///     <see cref="EmissionPlan"/>.</description></item>
+///   <item><description>Emission — keyed on the plan alone, so an edit that only moves a
 ///     diagnostic location leaves the emitted source cached.</description></item>
 /// </list>
 /// </remarks>
@@ -35,28 +38,53 @@ internal sealed class ArrowIncrementalGenerator : IIncrementalGenerator
             .Select(static (result, _) => result!)
             .WithTrackingName(TrackingNames.Parse);
 
+        // A single bool: every downstream node stays cached until the reference itself changes.
+        IncrementalValueProvider<bool> arrowReferenced = context
+            .CompilationProvider.Select(
+                static (compilation, _) =>
+                    compilation.GetTypeByMetadataName("Apache.Arrow.RecordBatch") is not null
+            )
+            .WithTrackingName(TrackingNames.ArrowReference);
+
+        IncrementalValuesProvider<PlanResult> planned = parsed
+            .Where(static result => result.Model is not null)
+            .Combine(arrowReferenced)
+            .Select(static (pair, _) => EmissionPlanner.Plan(pair.Left, pair.Right))
+            .WithTrackingName(TrackingNames.Plan);
+
         context.RegisterSourceOutput(
             parsed
                 .Select(static (result, _) => result.Diagnostics)
                 .WithTrackingName(TrackingNames.Diagnostics),
-            static (spc, diagnostics) =>
-            {
-                foreach (DiagnosticInfo diagnostic in diagnostics)
-                {
-                    spc.ReportDiagnostic(diagnostic.ToDiagnostic());
-                }
-            }
+            ReportAll
+        );
+        context.RegisterSourceOutput(
+            planned
+                .Select(static (result, _) => result.Diagnostics)
+                .WithTrackingName(TrackingNames.PlanDiagnostics),
+            ReportAll
         );
 
-        IncrementalValuesProvider<TargetModel> models = parsed
-            .Where(static result => result.Model is not null)
-            .Select(static (result, _) => result.Model!)
-            .WithTrackingName(TrackingNames.Model);
+        IncrementalValuesProvider<EmissionPlan> plans = planned
+            .Where(static result => result.Plan is not null)
+            .Select(static (result, _) => result.Plan!)
+            .WithTrackingName(TrackingNames.EmissionPlan);
 
         context.RegisterSourceOutput(
-            models,
-            static (spc, model) =>
-                spc.AddSource(ArrowEmitter.HintName(model), ArrowEmitter.Emit(model))
+            plans,
+            static (spc, plan) =>
+                spc.AddSource(ArrowEmitter.HintName(plan), ArrowEmitter.Emit(plan))
         );
+    }
+
+    private static void ReportAll(
+        SourceProductionContext context,
+        EquatableArray<DiagnosticInfo> diagnostics
+    )
+    {
+        foreach (DiagnosticInfo diagnostic in diagnostics)
+        {
+            context.ReportDiagnostic(diagnostic.ToDiagnostic());
+        }
     }
 }

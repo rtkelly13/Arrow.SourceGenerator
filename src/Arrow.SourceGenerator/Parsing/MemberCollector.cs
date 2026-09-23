@@ -121,7 +121,11 @@ internal static class MemberCollector
             .ThenBy(item => item.Column.Order ?? 0)
             .ThenBy(item => item.DeclarationIndex)
             .Select(item => new CollectedMember(
-                CreateModel(item.Property, item.Column.Name ?? item.Property.Name),
+                CreateModel(
+                    item.Property,
+                    item.Column.Name ?? item.Property.Name,
+                    ReadAnnotations(item.Property, positional)
+                ),
                 item.Property
             ))
             .ToList();
@@ -176,7 +180,11 @@ internal static class MemberCollector
         }
     }
 
-    private static MemberModel CreateModel(IPropertySymbol property, string fieldName)
+    private static MemberModel CreateModel(
+        IPropertySymbol property,
+        string fieldName,
+        MemberAnnotations annotations
+    )
     {
         (TypeRef type, bool nullable) = TypeClassifier.Classify(
             property.Type,
@@ -189,7 +197,31 @@ internal static class MemberCollector
             Type: type,
             IsNullable: nullable,
             IsAssignable: property.SetMethod is { } setter && IsReachable(setter),
-            IsRequired: property.IsRequired
+            IsRequired: property.IsRequired,
+            Annotations: annotations
+        );
+    }
+
+    private static MemberAnnotations ReadAnnotations(
+        IPropertySymbol property,
+        Dictionary<string, IParameterSymbol> positional
+    )
+    {
+        AttributeData? decimalAttribute =
+            FindAttribute(property, AttributeNames.Decimal)
+            ?? (
+                positional.TryGetValue(property.Name, out IParameterSymbol? parameter)
+                    ? FindAttribute(parameter, AttributeNames.Decimal)
+                    : null
+            );
+        if (decimalAttribute is not { ConstructorArguments.Length: 2 } found)
+        {
+            return MemberAnnotations.None;
+        }
+
+        return new MemberAnnotations(
+            found.ConstructorArguments[0].Value as int?,
+            found.ConstructorArguments[1].Value as int?
         );
     }
 

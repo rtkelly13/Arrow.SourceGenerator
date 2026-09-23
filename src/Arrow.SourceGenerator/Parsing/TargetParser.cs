@@ -10,7 +10,16 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace Arrow.SourceGenerator.Parsing;
 
 /// <summary>What parsing one target produced: a model when it can be emitted, and diagnostics.</summary>
-internal sealed record ParseResult(TargetModel? Model, EquatableArray<DiagnosticInfo> Diagnostics);
+/// <remarks>
+/// <see cref="Sites"/> and <see cref="TargetLocation"/> carry locations for diagnostics raised by
+/// later stages; they sit beside the model, never inside it.
+/// </remarks>
+internal sealed record ParseResult(
+    TargetModel? Model,
+    EquatableArray<DiagnosticInfo> Diagnostics,
+    EquatableArray<MemberSite> Sites,
+    LocationInfo? TargetLocation
+);
 
 /// <summary>
 /// Turns an <c>[ArrowSerializable]</c> type symbol into a <see cref="TargetModel"/>, reporting every
@@ -88,7 +97,14 @@ internal static class TargetParser
                     Construction: construction
                 );
 
-        return new ParseResult(model, diagnostics.ToEquatableArray());
+        EquatableArray<MemberSite> sites = members
+            .Select(m => new MemberSite(
+                m.Model.Name,
+                LocationInfo.From(m.Symbol.Locations.FirstOrDefault())
+            ))
+            .ToEquatableArray();
+
+        return new ParseResult(model, diagnostics.ToEquatableArray(), sites, location);
     }
 
     private static bool OwnsAttribute(

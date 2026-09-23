@@ -11,6 +11,14 @@
         <Description>Attributes that mark .NET models for compile-time Apache Arrow mapping by Arrow.SourceGenerator.</Description>
     </PropertyGroup>
 
+    <!--
+    Generated code calls Apache.Arrow directly, so the contract package carries the dependency and
+    its floor (docs/05-COMPATIBILITY.md). This assembly itself uses no Arrow type.
+  -->
+    <ItemGroup>
+        <PackageReference Include="Apache.Arrow" />
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="All" />
         <AdditionalFiles Include="PublicAPI.Shipped.txt" />
