@@ -161,6 +161,120 @@ namespace Golden.@namespace
                 return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
             }
 
+            /// <summary>
+            /// Materialises every row of <paramref name="batch"/> as <see cref="global::Golden.@namespace.Outer.KeywordAndEscaping"/>.
+            /// Fields are matched by name, so extra fields and field order do not matter.
+            /// </summary>
+            /// <param name="batch">The batch. It is read, never retained or disposed.</param>
+            /// <exception cref="global::System.IO.InvalidDataException">The batch does not match
+            /// <see cref="Schema"/> (every mismatch is listed), is structurally malformed, or holds a
+            /// value outside the range of its CLR type.</exception>
+            public static global::Golden.@namespace.Outer.KeywordAndEscaping[] FromRecordBatch(global::Apache.Arrow.RecordBatch batch)
+            {
+                if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+                return ReadRecordBatch(batch);
+            }
+
+            /// <summary>
+            /// Materialises the rows of each batch in turn, lazily. Each batch is validated when it
+            /// is reached; batches are read, never retained or disposed.
+            /// </summary>
+            /// <param name="batches">The batches, enumerated once.</param>
+            public static global::System.Collections.Generic.IEnumerable<global::Golden.@namespace.Outer.KeywordAndEscaping> FromRecordBatches(global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> batches)
+            {
+                if (batches is null) throw new global::System.ArgumentNullException(nameof(batches));
+                return FromRecordBatchesIterator(batches);
+            }
+
+            private static global::System.Collections.Generic.IEnumerable<global::Golden.@namespace.Outer.KeywordAndEscaping> FromRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> batches)
+            {
+                foreach (var batch in batches)
+                {
+                    if (batch is null) throw new global::System.ArgumentException("The batch sequence contains a null batch.", nameof(batches));
+                    foreach (var row in ReadRecordBatch(batch))
+                    {
+                        yield return row;
+                    }
+                }
+            }
+
+            private static global::Golden.@namespace.Outer.KeywordAndEscaping[] ReadRecordBatch(global::Apache.Arrow.RecordBatch batch)
+            {
+                int[] ordinals = ResolveColumns(batch);
+                var c0 = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[0]);
+                global::System.ReadOnlySpan<int> v0 = c0.Values;
+                var c1 = (global::Apache.Arrow.StringArray)batch.Column(ordinals[1]);
+                var c2 = (global::Apache.Arrow.Int64Array)batch.Column(ordinals[2]);
+                global::System.ReadOnlySpan<long> v2 = c2.Values;
+                int length = batch.Length;
+                var rows = new global::Golden.@namespace.Outer.KeywordAndEscaping[length];
+                for (int i = 0; i < length; i++)
+                {
+                    rows[i] = new global::Golden.@namespace.Outer.KeywordAndEscaping(v0[i], c1.IsNull(i) ? null : c1.GetString(i)!, v2[i]);
+                }
+                return rows;
+            }
+
+            /// <summary>
+            /// Checks every assumption the reader makes about <paramref name="batch"/> and returns the
+            /// column ordinal of each field. Throws once, listing every problem found.
+            /// </summary>
+            private static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
+            {
+                var ordinals = new int[3];
+                global::System.Collections.Generic.List<string>? errors = null;
+
+                // quote"back\slash
+                {
+                    int index = FindField(batch, "quote\"back\\slash", ref errors);
+                    ordinals[0] = index;
+                    if (index >= 0)
+                    {
+                        global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                        string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int32, "Int32")
+                            ?? CheckFixedWidth(column, sizeof(int))
+                            ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                            ;
+                        if (problem is not null) AddError(ref errors, "quote\"back\\slash", problem);
+                    }
+                }
+
+                // new line <xml> & */
+                {
+                    int index = FindField(batch, "new\nline <xml> & */", ref errors);
+                    ordinals[1] = index;
+                    if (index >= 0)
+                    {
+                        global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                        string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.String, "Utf8")
+                            ?? CheckOffsets((global::Apache.Arrow.BinaryArray)column)
+                            ;
+                        if (problem is not null) AddError(ref errors, "new\nline <xml> & */", problem);
+                    }
+                }
+
+                // unicode-é-中
+                {
+                    int index = FindField(batch, "unicode-é-中", ref errors);
+                    ordinals[2] = index;
+                    if (index >= 0)
+                    {
+                        global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                        string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int64, "Int64")
+                            ?? CheckFixedWidth(column, sizeof(long))
+                            ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                            ;
+                        if (problem is not null) AddError(ref errors, "unicode-é-中", problem);
+                    }
+                }
+
+                if (errors is not null)
+                {
+                    throw new global::System.IO.InvalidDataException("The RecordBatch does not match the generated Arrow schema of " + "KeywordAndEscaping" + ": " + string.Join("; ", errors) + ".");
+                }
+                return ordinals;
+            }
+
             [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
             private static void ThrowCollectionChanged()
             {
@@ -171,6 +285,89 @@ namespace Golden.@namespace
             private static void ThrowNullRow(int index)
             {
                 throw new global::System.ArgumentException("Row " + index + " is null; " + "KeywordAndEscaping" + " rows must not be null.", "rows");
+            }
+
+            private static int FindField(global::Apache.Arrow.RecordBatch batch, string name, ref global::System.Collections.Generic.List<string>? errors)
+            {
+                int found = -1;
+                int matches = 0;
+                var fields = batch.Schema.FieldsList;
+                for (int i = 0; i < fields.Count; i++)
+                {
+                    if (string.Equals(fields[i].Name, name, global::System.StringComparison.Ordinal))
+                    {
+                        found = i;
+                        matches++;
+                    }
+                }
+                if (matches == 1) return found;
+                AddError(ref errors, name, matches == 0 ? "is missing" : "appears " + matches + " times, so it is ambiguous");
+                return -1;
+            }
+
+            private static void AddError(ref global::System.Collections.Generic.List<string>? errors, string field, string problem)
+            {
+                (errors ??= new global::System.Collections.Generic.List<string>()).Add("field '" + field + "' " + problem);
+            }
+
+            private static string? CheckColumnShape(global::Apache.Arrow.RecordBatch batch, int index, global::Apache.Arrow.IArrowArray column, global::Apache.Arrow.Types.ArrowTypeId expected, string expectedName)
+            {
+                global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                if (type.TypeId == global::Apache.Arrow.Types.ArrowTypeId.Dictionary) return "is dictionary-encoded, which is not supported; decode it first";
+                if (type.TypeId == global::Apache.Arrow.Types.ArrowTypeId.Extension) return "has an extension type, which is not supported; expected " + expectedName;
+                if (type.TypeId != expected) return "expected " + expectedName + ", found " + type.Name;
+                if (batch.Schema.FieldsList[index].DataType.TypeId != type.TypeId) return "is declared as " + batch.Schema.FieldsList[index].DataType.Name + " by the schema but its column holds " + type.Name;
+                if (column.Length != batch.Length) return "has " + column.Length + " values but the batch has " + batch.Length + " rows";
+                return null;
+            }
+
+            private static string? CheckValidity(global::Apache.Arrow.ArrayData data)
+            {
+                long bits = (long)data.Offset + data.Length;
+                if (data.Offset < 0 || data.Length < 0) return "has a negative offset or length";
+                if (data.Buffers.Length == 0) return "has no buffers";
+                global::Apache.Arrow.ArrowBuffer validity = data.Buffers[0];
+                if (data.NullCount > 0 && validity.IsEmpty) return "declares nulls but has no validity bitmap";
+                if (!validity.IsEmpty && validity.Length < (bits + 7) / 8) return "has a validity bitmap shorter than its length";
+                return null;
+            }
+
+            // byteWidth 0 means bit-packed (Boolean).
+            private static string? CheckFixedWidth(global::Apache.Arrow.IArrowArray column, int byteWidth)
+            {
+                global::Apache.Arrow.ArrayData data = column.Data;
+                string? problem = CheckValidity(data);
+                if (problem is not null) return problem;
+                if (data.Buffers.Length < 2) return "is missing its value buffer";
+                long end = (long)data.Offset + data.Length;
+                long needed = byteWidth == 0 ? (end + 7) / 8 : end * byteWidth;
+                return data.Buffers[1].Length < needed ? "has a value buffer of " + data.Buffers[1].Length + " bytes where " + needed + " are required" : null;
+            }
+
+            private static string? CheckOffsets(global::Apache.Arrow.BinaryArray array)
+            {
+                global::Apache.Arrow.ArrayData data = array.Data;
+                string? problem = CheckValidity(data);
+                if (problem is not null) return problem;
+                if (data.Buffers.Length < 3) return "is missing its offset or value buffer";
+                long slots = (long)data.Offset + data.Length + 1;
+                if (data.Buffers[1].Length < slots * 4) return "has an offset buffer shorter than its length";
+                global::System.ReadOnlySpan<int> offsets = array.ValueOffsets;
+                int valuesLength = array.ValueBuffer.Length;
+                int previous = offsets[0];
+                if (previous < 0 || previous > valuesLength) return "has an offset outside its value buffer at slot 0";
+                for (int k = 1; k < offsets.Length; k++)
+                {
+                    int offset = offsets[k];
+                    if (offset < previous || offset > valuesLength) return "has offsets that decrease or run past its value buffer at slot " + (k - 1);
+                    previous = offset;
+                }
+                return null;
+            }
+
+            private static global::System.IO.InvalidDataException OutOfRange(int row, string field, string clrType, global::System.Exception? inner = null)
+            {
+                return new global::System.IO.InvalidDataException("Row " + row + ": the value in Arrow field '" + field + "' is outside the range of " + clrType + ".", inner);
             }
         }
     }

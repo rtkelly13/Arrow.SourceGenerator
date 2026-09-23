@@ -18,6 +18,7 @@ internal static class Program
         GeneratedCompanionExists();
         GeneratedSchemaMatchesTheModel();
         GeneratedWritePathSurvivesIpc();
+        GeneratedReadPathRoundTripsAndValidates();
 
         Console.WriteLine($"Arrow.SourceGenerator AOT checks passed: {_checks}");
         return 0;
@@ -101,6 +102,41 @@ internal static class Program
             ((Apache.Arrow.Arrays.FixedSizeBinaryArray)copy.Column(8)).GetBytes(0)[15] == 0xff,
             "write guid big-endian"
         );
+    }
+
+    private static void GeneratedReadPathRoundTripsAndValidates()
+    {
+        AotOrder[] expected = SampleOrders();
+        using RecordBatch batch = AotOrderArrow.ToRecordBatch(expected);
+        using RecordBatch copy = IpcRoundTrip(batch);
+        AotOrder[] read = AotOrderArrow.FromRecordBatch(copy);
+
+        Check(read.Length == 2, "read length");
+        Check(read[0].Customer == "ada" && read[1].Customer == "grace", "read utf8");
+        Check(read[0].Quantity == 3 && read[1].Quantity is null, "read nullable int");
+        Check(read[0].Attachment is [1, 2, 3] && read[1].Attachment is null, "read binary");
+        Check(read[0].Total == 12.3456m, "read decimal");
+        Check(read[0].Day == expected[0].Day, "read date32");
+        Check(read[0].PlacedAt == expected[0].PlacedAt, "read utc instant");
+        Check(read[0].Latency == expected[0].Latency && read[1].Latency is null, "read duration");
+        Check(read[0].Reference == expected[0].Reference, "read guid");
+
+        using var wrong = new RecordBatch(
+            new Schema.Builder().Field(f => f.Name("Id").DataType(StringType.Default)).Build(),
+            [new StringArray.Builder().Append("x").Build()],
+            1
+        );
+        bool rejected = false;
+        try
+        {
+            AotOrderArrow.FromRecordBatch(wrong);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+
+        Check(rejected, "read validation rejects a mismatched batch");
     }
 
     internal static RecordBatch IpcRoundTrip(RecordBatch batch)

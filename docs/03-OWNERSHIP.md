@@ -34,6 +34,14 @@ does not claim otherwise. What it guarantees:
   exact row count, so the peak is the finished columns plus one column under construction — never
   every column's temporary at once (Parquet.SourceGenerator PR #326 showed the cost of the latter).
 
+### `FromRecordBatch` / `FromRecordBatches` — conversion copy
+
+- **The batch is only read.** It is never retained, mutated or disposed; the caller keeps ownership
+  and may dispose it as soon as the call returns (for `FromRecordBatches`, once enumeration has
+  moved past it).
+- **Models own their data.** Strings are decoded into new `string`s and binary values are copied
+  into new `byte[]`s, so no model aliases Arrow memory and disposing the batch cannot affect them.
+
 ## Not yet present
 
 No generated path hands out borrowed or pooled memory, and none will until its lifetime rule is

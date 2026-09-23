@@ -708,6 +708,532 @@ namespace Golden.Events
             return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
         }
 
+        /// <summary>
+        /// Materialises every row of <paramref name="batch"/> as <see cref="global::Golden.Events.ScalarEvent"/>.
+        /// Fields are matched by name, so extra fields and field order do not matter.
+        /// </summary>
+        /// <param name="batch">The batch. It is read, never retained or disposed.</param>
+        /// <exception cref="global::System.IO.InvalidDataException">The batch does not match
+        /// <see cref="Schema"/> (every mismatch is listed), is structurally malformed, or holds a
+        /// value outside the range of its CLR type.</exception>
+        public static global::Golden.Events.ScalarEvent[] FromRecordBatch(global::Apache.Arrow.RecordBatch batch)
+        {
+            if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+            return ReadRecordBatch(batch);
+        }
+
+        /// <summary>
+        /// Materialises the rows of each batch in turn, lazily. Each batch is validated when it
+        /// is reached; batches are read, never retained or disposed.
+        /// </summary>
+        /// <param name="batches">The batches, enumerated once.</param>
+        public static global::System.Collections.Generic.IEnumerable<global::Golden.Events.ScalarEvent> FromRecordBatches(global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> batches)
+        {
+            if (batches is null) throw new global::System.ArgumentNullException(nameof(batches));
+            return FromRecordBatchesIterator(batches);
+        }
+
+        private static global::System.Collections.Generic.IEnumerable<global::Golden.Events.ScalarEvent> FromRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> batches)
+        {
+            foreach (var batch in batches)
+            {
+                if (batch is null) throw new global::System.ArgumentException("The batch sequence contains a null batch.", nameof(batches));
+                foreach (var row in ReadRecordBatch(batch))
+                {
+                    yield return row;
+                }
+            }
+        }
+
+        private static global::Golden.Events.ScalarEvent[] ReadRecordBatch(global::Apache.Arrow.RecordBatch batch)
+        {
+            int[] ordinals = ResolveColumns(batch);
+            var c0 = (global::Apache.Arrow.BooleanArray)batch.Column(ordinals[0]);
+            var c1 = (global::Apache.Arrow.Int8Array)batch.Column(ordinals[1]);
+            global::System.ReadOnlySpan<sbyte> v1 = c1.Values;
+            var c2 = (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[2]);
+            global::System.ReadOnlySpan<byte> v2 = c2.Values;
+            var c3 = (global::Apache.Arrow.Int16Array)batch.Column(ordinals[3]);
+            global::System.ReadOnlySpan<short> v3 = c3.Values;
+            var c4 = (global::Apache.Arrow.UInt16Array)batch.Column(ordinals[4]);
+            global::System.ReadOnlySpan<ushort> v4 = c4.Values;
+            var c5 = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[5]);
+            global::System.ReadOnlySpan<int> v5 = c5.Values;
+            var c6 = (global::Apache.Arrow.UInt32Array)batch.Column(ordinals[6]);
+            global::System.ReadOnlySpan<uint> v6 = c6.Values;
+            var c7 = (global::Apache.Arrow.Int64Array)batch.Column(ordinals[7]);
+            global::System.ReadOnlySpan<long> v7 = c7.Values;
+            var c8 = (global::Apache.Arrow.UInt64Array)batch.Column(ordinals[8]);
+            global::System.ReadOnlySpan<ulong> v8 = c8.Values;
+            var c9 = (global::Apache.Arrow.FloatArray)batch.Column(ordinals[9]);
+            global::System.ReadOnlySpan<float> v9 = c9.Values;
+            var c10 = (global::Apache.Arrow.DoubleArray)batch.Column(ordinals[10]);
+            global::System.ReadOnlySpan<double> v10 = c10.Values;
+            var c11 = (global::Apache.Arrow.StringArray)batch.Column(ordinals[11]);
+            var c12 = (global::Apache.Arrow.StringArray)batch.Column(ordinals[12]);
+            var c13 = (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[13]);
+            var c14 = (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[14]);
+            var c15 = (global::Apache.Arrow.Decimal128Array)batch.Column(ordinals[15]);
+            var c16 = (global::Apache.Arrow.Date32Array)batch.Column(ordinals[16]);
+            global::System.ReadOnlySpan<int> v16 = c16.Values;
+            var c17 = (global::Apache.Arrow.Time64Array)batch.Column(ordinals[17]);
+            global::System.ReadOnlySpan<long> v17 = c17.Values;
+            var c18 = (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[18]);
+            global::System.ReadOnlySpan<long> v18 = c18.Values;
+            var c19 = (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[19]);
+            global::System.ReadOnlySpan<long> v19 = c19.Values;
+            var c20 = (global::Apache.Arrow.DurationArray)batch.Column(ordinals[20]);
+            global::System.ReadOnlySpan<long> v20 = c20.Values;
+            var c21 = (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[21]);
+            var c22 = (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[22]);
+            global::System.ReadOnlySpan<byte> v22 = c22.Values;
+            var c23 = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[23]);
+            global::System.ReadOnlySpan<int> v23 = c23.Values;
+            var c24 = (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[24]);
+            var c25 = (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[25]);
+            global::System.ReadOnlySpan<long> v25 = c25.Values;
+            var c26 = (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[26]);
+            global::System.ReadOnlySpan<byte> v26 = c26.Values;
+            int length = batch.Length;
+            var rows = new global::Golden.Events.ScalarEvent[length];
+            for (int i = 0; i < length; i++)
+            {
+                rows[i] = new global::Golden.Events.ScalarEvent() { Flag = c0.GetValue(i).GetValueOrDefault(), Tiny = v1[i], UnsignedTiny = v2[i], Small = v3[i], UnsignedSmall = v4[i], Count = v5[i], UnsignedCount = v6[i], Id = v7[i], UnsignedId = v8[i], Ratio = v9[i], Score = v10[i], Name = c11.GetString(i)!, Note = c12.IsNull(i) ? null : c12.GetString(i)!, Payload = c13.GetBytes(i).ToArray(), OptionalPayload = c14.IsNull(i) ? null : c14.GetBytes(i).ToArray(), Amount = ReadDecimal(c15, i, "Amount", 18), Day = ToDateOnly(v16[i], i, "Day"), At = ToTimeOnly(v17[i], i, "At"), LocalWallClock = ToDateTime(v18[i], i, "LocalWallClock"), OccurredAt = ToDateTimeOffset(v19[i], i, "OccurredAt"), Elapsed = ToTimeSpan(v20[i], i, "Elapsed"), CorrelationId = ReadGuidBigEndian(c21.GetBytes(i)), Priority = (global::Golden.Events.Priority)v22[i], MaybeCount = c23.IsNull(i) ? null : (int?)v23[i], MaybeCorrelationId = c24.IsNull(i) ? null : (global::System.Guid?)ReadGuidBigEndian(c24.GetBytes(i)), MaybeOccurredAt = c25.IsNull(i) ? null : (global::System.DateTimeOffset?)ToDateTimeOffset(v25[i], i, "MaybeOccurredAt"), MaybePriority = c26.IsNull(i) ? null : (global::Golden.Events.Priority?)(global::Golden.Events.Priority)v26[i] };
+            }
+            return rows;
+        }
+
+        /// <summary>
+        /// Checks every assumption the reader makes about <paramref name="batch"/> and returns the
+        /// column ordinal of each field. Throws once, listing every problem found.
+        /// </summary>
+        private static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
+        {
+            var ordinals = new int[27];
+            global::System.Collections.Generic.List<string>? errors = null;
+
+            // Flag
+            {
+                int index = FindField(batch, "Flag", ref errors);
+                ordinals[0] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Boolean, "Boolean")
+                        ?? CheckFixedWidth(column, 0)
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Flag", problem);
+                }
+            }
+
+            // Tiny
+            {
+                int index = FindField(batch, "Tiny", ref errors);
+                ordinals[1] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int8, "Int8")
+                        ?? CheckFixedWidth(column, sizeof(sbyte))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Tiny", problem);
+                }
+            }
+
+            // UnsignedTiny
+            {
+                int index = FindField(batch, "UnsignedTiny", ref errors);
+                ordinals[2] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.UInt8, "UInt8")
+                        ?? CheckFixedWidth(column, sizeof(byte))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "UnsignedTiny", problem);
+                }
+            }
+
+            // Small
+            {
+                int index = FindField(batch, "Small", ref errors);
+                ordinals[3] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int16, "Int16")
+                        ?? CheckFixedWidth(column, sizeof(short))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Small", problem);
+                }
+            }
+
+            // UnsignedSmall
+            {
+                int index = FindField(batch, "UnsignedSmall", ref errors);
+                ordinals[4] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.UInt16, "UInt16")
+                        ?? CheckFixedWidth(column, sizeof(ushort))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "UnsignedSmall", problem);
+                }
+            }
+
+            // Count
+            {
+                int index = FindField(batch, "Count", ref errors);
+                ordinals[5] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int32, "Int32")
+                        ?? CheckFixedWidth(column, sizeof(int))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Count", problem);
+                }
+            }
+
+            // UnsignedCount
+            {
+                int index = FindField(batch, "UnsignedCount", ref errors);
+                ordinals[6] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.UInt32, "UInt32")
+                        ?? CheckFixedWidth(column, sizeof(uint))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "UnsignedCount", problem);
+                }
+            }
+
+            // Id
+            {
+                int index = FindField(batch, "Id", ref errors);
+                ordinals[7] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int64, "Int64")
+                        ?? CheckFixedWidth(column, sizeof(long))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Id", problem);
+                }
+            }
+
+            // UnsignedId
+            {
+                int index = FindField(batch, "UnsignedId", ref errors);
+                ordinals[8] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.UInt64, "UInt64")
+                        ?? CheckFixedWidth(column, sizeof(ulong))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "UnsignedId", problem);
+                }
+            }
+
+            // Ratio
+            {
+                int index = FindField(batch, "Ratio", ref errors);
+                ordinals[9] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Float, "Float")
+                        ?? CheckFixedWidth(column, sizeof(float))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Ratio", problem);
+                }
+            }
+
+            // Score
+            {
+                int index = FindField(batch, "Score", ref errors);
+                ordinals[10] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Double, "Double")
+                        ?? CheckFixedWidth(column, sizeof(double))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Score", problem);
+                }
+            }
+
+            // Name
+            {
+                int index = FindField(batch, "Name", ref errors);
+                ordinals[11] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.String, "Utf8")
+                        ?? CheckOffsets((global::Apache.Arrow.BinaryArray)column)
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Name", problem);
+                }
+            }
+
+            // Note
+            {
+                int index = FindField(batch, "Note", ref errors);
+                ordinals[12] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.String, "Utf8")
+                        ?? CheckOffsets((global::Apache.Arrow.BinaryArray)column)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Note", problem);
+                }
+            }
+
+            // Payload
+            {
+                int index = FindField(batch, "Payload", ref errors);
+                ordinals[13] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Binary, "Binary")
+                        ?? CheckOffsets((global::Apache.Arrow.BinaryArray)column)
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Payload", problem);
+                }
+            }
+
+            // OptionalPayload
+            {
+                int index = FindField(batch, "OptionalPayload", ref errors);
+                ordinals[14] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Binary, "Binary")
+                        ?? CheckOffsets((global::Apache.Arrow.BinaryArray)column)
+                        ;
+                    if (problem is not null) AddError(ref errors, "OptionalPayload", problem);
+                }
+            }
+
+            // Amount
+            {
+                int index = FindField(batch, "Amount", ref errors);
+                ordinals[15] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Decimal128, "Decimal128(38, 18)")
+                        ?? (type is global::Apache.Arrow.Types.Decimal128Type d && (d.Precision != 38 || d.Scale != 18) ? "expected Decimal128(38, 18), found Decimal128(" + d.Precision + ", " + d.Scale + ")" : null)
+                        ?? CheckFixedWidth(column, 16)
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Amount", problem);
+                }
+            }
+
+            // Day
+            {
+                int index = FindField(batch, "Day", ref errors);
+                ordinals[16] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Date32, "Date32")
+                        ?? CheckFixedWidth(column, sizeof(int))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Day", problem);
+                }
+            }
+
+            // At
+            {
+                int index = FindField(batch, "At", ref errors);
+                ordinals[17] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Time64, "Time64(Microsecond)")
+                        ?? (type is global::Apache.Arrow.Types.Time64Type t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : null)
+                        ?? CheckFixedWidth(column, sizeof(long))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "At", problem);
+                }
+            }
+
+            // LocalWallClock
+            {
+                int index = FindField(batch, "LocalWallClock", ref errors);
+                ordinals[18] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Timestamp, "Timestamp(Microsecond, no timezone)")
+                        ?? (type is global::Apache.Arrow.Types.TimestampType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : type is global::Apache.Arrow.Types.TimestampType z && !string.IsNullOrEmpty(z.Timezone) ? "expected a wall-clock timestamp with no timezone, found timezone '" + z.Timezone + "'; map an instant to DateTimeOffset" : null)
+                        ?? CheckFixedWidth(column, sizeof(long))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "LocalWallClock", problem);
+                }
+            }
+
+            // OccurredAt
+            {
+                int index = FindField(batch, "OccurredAt", ref errors);
+                ordinals[19] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Timestamp, "Timestamp(Microsecond, with timezone)")
+                        ?? (type is global::Apache.Arrow.Types.TimestampType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : type is global::Apache.Arrow.Types.TimestampType z && string.IsNullOrEmpty(z.Timezone) ? "expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime" : null)
+                        ?? CheckFixedWidth(column, sizeof(long))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "OccurredAt", problem);
+                }
+            }
+
+            // Elapsed
+            {
+                int index = FindField(batch, "Elapsed", ref errors);
+                ordinals[20] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Duration, "Duration(Microsecond)")
+                        ?? (type is global::Apache.Arrow.Types.DurationType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : null)
+                        ?? CheckFixedWidth(column, sizeof(long))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Elapsed", problem);
+                }
+            }
+
+            // CorrelationId
+            {
+                int index = FindField(batch, "CorrelationId", ref errors);
+                ordinals[21] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.FixedSizedBinary, "FixedSizeBinary(16)")
+                        ?? (type is global::Apache.Arrow.Types.FixedSizeBinaryType f && f.ByteWidth != 16 ? "expected FixedSizeBinary(16), found FixedSizeBinary(" + f.ByteWidth + ")" : null)
+                        ?? CheckFixedWidth(column, 16)
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "CorrelationId", problem);
+                }
+            }
+
+            // Priority
+            {
+                int index = FindField(batch, "Priority", ref errors);
+                ordinals[22] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.UInt8, "UInt8")
+                        ?? CheckFixedWidth(column, sizeof(byte))
+                        ?? (column.NullCount > 0 ? "is non-nullable but holds " + column.NullCount + " null value(s)" : null)
+                        ;
+                    if (problem is not null) AddError(ref errors, "Priority", problem);
+                }
+            }
+
+            // MaybeCount
+            {
+                int index = FindField(batch, "MaybeCount", ref errors);
+                ordinals[23] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Int32, "Int32")
+                        ?? CheckFixedWidth(column, sizeof(int))
+                        ;
+                    if (problem is not null) AddError(ref errors, "MaybeCount", problem);
+                }
+            }
+
+            // MaybeCorrelationId
+            {
+                int index = FindField(batch, "MaybeCorrelationId", ref errors);
+                ordinals[24] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.FixedSizedBinary, "FixedSizeBinary(16)")
+                        ?? (type is global::Apache.Arrow.Types.FixedSizeBinaryType f && f.ByteWidth != 16 ? "expected FixedSizeBinary(16), found FixedSizeBinary(" + f.ByteWidth + ")" : null)
+                        ?? CheckFixedWidth(column, 16)
+                        ;
+                    if (problem is not null) AddError(ref errors, "MaybeCorrelationId", problem);
+                }
+            }
+
+            // MaybeOccurredAt
+            {
+                int index = FindField(batch, "MaybeOccurredAt", ref errors);
+                ordinals[25] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.Timestamp, "Timestamp(Microsecond, with timezone)")
+                        ?? (type is global::Apache.Arrow.Types.TimestampType t && t.Unit != global::Apache.Arrow.Types.TimeUnit.Microsecond ? "expected unit Microsecond, found " + t.Unit : type is global::Apache.Arrow.Types.TimestampType z && string.IsNullOrEmpty(z.Timezone) ? "expected an instant (a timestamp with a timezone), found a wall-clock timestamp; map it to DateTime" : null)
+                        ?? CheckFixedWidth(column, sizeof(long))
+                        ;
+                    if (problem is not null) AddError(ref errors, "MaybeOccurredAt", problem);
+                }
+            }
+
+            // MaybePriority
+            {
+                int index = FindField(batch, "MaybePriority", ref errors);
+                ordinals[26] = index;
+                if (index >= 0)
+                {
+                    global::Apache.Arrow.IArrowArray column = batch.Column(index);
+                    string? problem = CheckColumnShape(batch, index, column, global::Apache.Arrow.Types.ArrowTypeId.UInt8, "UInt8")
+                        ?? CheckFixedWidth(column, sizeof(byte))
+                        ;
+                    if (problem is not null) AddError(ref errors, "MaybePriority", problem);
+                }
+            }
+
+            if (errors is not null)
+            {
+                throw new global::System.IO.InvalidDataException("The RecordBatch does not match the generated Arrow schema of " + "ScalarEvent" + ": " + string.Join("; ", errors) + ".");
+            }
+            return ordinals;
+        }
+
         // DateOnly.DayNumber of 1970-01-01, the Date32 epoch.
         private const int UnixEpochDayNumber = 719162;
 
@@ -750,6 +1276,147 @@ namespace Golden.Events
         private static void ThrowDoesNotFit(int index, string field, string arrowType, global::System.Exception inner)
         {
             throw new global::System.ArgumentException("Row " + index + ": the value for Arrow field '" + field + "' does not fit " + arrowType + "; nothing is rounded or truncated.", "rows", inner);
+        }
+
+        private static int FindField(global::Apache.Arrow.RecordBatch batch, string name, ref global::System.Collections.Generic.List<string>? errors)
+        {
+            int found = -1;
+            int matches = 0;
+            var fields = batch.Schema.FieldsList;
+            for (int i = 0; i < fields.Count; i++)
+            {
+                if (string.Equals(fields[i].Name, name, global::System.StringComparison.Ordinal))
+                {
+                    found = i;
+                    matches++;
+                }
+            }
+            if (matches == 1) return found;
+            AddError(ref errors, name, matches == 0 ? "is missing" : "appears " + matches + " times, so it is ambiguous");
+            return -1;
+        }
+
+        private static void AddError(ref global::System.Collections.Generic.List<string>? errors, string field, string problem)
+        {
+            (errors ??= new global::System.Collections.Generic.List<string>()).Add("field '" + field + "' " + problem);
+        }
+
+        private static string? CheckColumnShape(global::Apache.Arrow.RecordBatch batch, int index, global::Apache.Arrow.IArrowArray column, global::Apache.Arrow.Types.ArrowTypeId expected, string expectedName)
+        {
+            global::Apache.Arrow.Types.IArrowType type = column.Data.DataType;
+            if (type.TypeId == global::Apache.Arrow.Types.ArrowTypeId.Dictionary) return "is dictionary-encoded, which is not supported; decode it first";
+            if (type.TypeId == global::Apache.Arrow.Types.ArrowTypeId.Extension) return "has an extension type, which is not supported; expected " + expectedName;
+            if (type.TypeId != expected) return "expected " + expectedName + ", found " + type.Name;
+            if (batch.Schema.FieldsList[index].DataType.TypeId != type.TypeId) return "is declared as " + batch.Schema.FieldsList[index].DataType.Name + " by the schema but its column holds " + type.Name;
+            if (column.Length != batch.Length) return "has " + column.Length + " values but the batch has " + batch.Length + " rows";
+            return null;
+        }
+
+        private static string? CheckValidity(global::Apache.Arrow.ArrayData data)
+        {
+            long bits = (long)data.Offset + data.Length;
+            if (data.Offset < 0 || data.Length < 0) return "has a negative offset or length";
+            if (data.Buffers.Length == 0) return "has no buffers";
+            global::Apache.Arrow.ArrowBuffer validity = data.Buffers[0];
+            if (data.NullCount > 0 && validity.IsEmpty) return "declares nulls but has no validity bitmap";
+            if (!validity.IsEmpty && validity.Length < (bits + 7) / 8) return "has a validity bitmap shorter than its length";
+            return null;
+        }
+
+        // byteWidth 0 means bit-packed (Boolean).
+        private static string? CheckFixedWidth(global::Apache.Arrow.IArrowArray column, int byteWidth)
+        {
+            global::Apache.Arrow.ArrayData data = column.Data;
+            string? problem = CheckValidity(data);
+            if (problem is not null) return problem;
+            if (data.Buffers.Length < 2) return "is missing its value buffer";
+            long end = (long)data.Offset + data.Length;
+            long needed = byteWidth == 0 ? (end + 7) / 8 : end * byteWidth;
+            return data.Buffers[1].Length < needed ? "has a value buffer of " + data.Buffers[1].Length + " bytes where " + needed + " are required" : null;
+        }
+
+        private static string? CheckOffsets(global::Apache.Arrow.BinaryArray array)
+        {
+            global::Apache.Arrow.ArrayData data = array.Data;
+            string? problem = CheckValidity(data);
+            if (problem is not null) return problem;
+            if (data.Buffers.Length < 3) return "is missing its offset or value buffer";
+            long slots = (long)data.Offset + data.Length + 1;
+            if (data.Buffers[1].Length < slots * 4) return "has an offset buffer shorter than its length";
+            global::System.ReadOnlySpan<int> offsets = array.ValueOffsets;
+            int valuesLength = array.ValueBuffer.Length;
+            int previous = offsets[0];
+            if (previous < 0 || previous > valuesLength) return "has an offset outside its value buffer at slot 0";
+            for (int k = 1; k < offsets.Length; k++)
+            {
+                int offset = offsets[k];
+                if (offset < previous || offset > valuesLength) return "has offsets that decrease or run past its value buffer at slot " + (k - 1);
+                previous = offset;
+            }
+            return null;
+        }
+
+        private static global::System.IO.InvalidDataException OutOfRange(int row, string field, string clrType, global::System.Exception? inner = null)
+        {
+            return new global::System.IO.InvalidDataException("Row " + row + ": the value in Arrow field '" + field + "' is outside the range of " + clrType + ".", inner);
+        }
+
+        // Exact by construction. Apache.Arrow's Decimal128Array.GetValue rounds a value with more
+        // significant digits than System.Decimal holds; this reads the 128-bit unscaled integer and
+        // accepts it only when it fits System.Decimal's 96-bit magnitude, so nothing is ever rounded.
+        private static decimal ReadDecimal(global::Apache.Arrow.Decimal128Array array, int row, string field, byte scale)
+        {
+            global::System.Int128 unscaled = global::System.Buffers.Binary.BinaryPrimitives.ReadInt128LittleEndian(array.GetBytes(row));
+            bool negative = unscaled < 0;
+            if (unscaled == global::System.Int128.MinValue) throw OutOfRange(row, field, "System.Decimal");
+            global::System.UInt128 magnitude = (global::System.UInt128)(negative ? -unscaled : unscaled);
+            if ((magnitude >> 96) != 0) throw OutOfRange(row, field, "System.Decimal");
+            return new decimal((int)(uint)magnitude, (int)(uint)(magnitude >> 32), (int)(uint)(magnitude >> 64), negative, scale);
+        }
+
+        private static global::System.DateOnly ToDateOnly(int days, int row, string field)
+        {
+            long dayNumber = (long)days + UnixEpochDayNumber;
+            if (dayNumber < 0 || dayNumber > global::System.DateOnly.MaxValue.DayNumber) throw OutOfRange(row, field, "System.DateOnly");
+            return global::System.DateOnly.FromDayNumber((int)dayNumber);
+        }
+
+        private static global::System.TimeOnly ToTimeOnly(long microseconds, int row, string field)
+        {
+            if (microseconds < 0 || microseconds >= 86400000000L) throw OutOfRange(row, field, "System.TimeOnly");
+            return new global::System.TimeOnly(microseconds * 10L);
+        }
+
+        private static long ToTicks(long microseconds, int row, string field, string clrType)
+        {
+            if (microseconds < -UnixEpochMicroseconds || microseconds > global::System.DateTime.MaxValue.Ticks / 10L - UnixEpochMicroseconds) throw OutOfRange(row, field, clrType);
+            return (microseconds + UnixEpochMicroseconds) * 10L;
+        }
+
+        private static global::System.DateTime ToDateTime(long microseconds, int row, string field)
+        {
+            return new global::System.DateTime(ToTicks(microseconds, row, field, "System.DateTime"), global::System.DateTimeKind.Unspecified);
+        }
+
+        private static global::System.DateTimeOffset ToDateTimeOffset(long microseconds, int row, string field)
+        {
+            return new global::System.DateTimeOffset(ToTicks(microseconds, row, field, "System.DateTimeOffset"), global::System.TimeSpan.Zero);
+        }
+
+        private static global::System.TimeSpan ToTimeSpan(long microseconds, int row, string field)
+        {
+            if (microseconds > global::System.TimeSpan.MaxValue.Ticks / 10L || microseconds < global::System.TimeSpan.MinValue.Ticks / 10L) throw OutOfRange(row, field, "System.TimeSpan");
+            return new global::System.TimeSpan(microseconds * 10L);
+        }
+
+        private static global::System.Guid ReadGuidBigEndian(global::System.ReadOnlySpan<byte> source)
+        {
+            global::System.Span<byte> bytes = stackalloc byte[16];
+            source.CopyTo(bytes);
+            global::System.MemoryExtensions.Reverse(bytes.Slice(0, 4));
+            global::System.MemoryExtensions.Reverse(bytes.Slice(4, 2));
+            global::System.MemoryExtensions.Reverse(bytes.Slice(6, 2));
+            return new global::System.Guid(bytes);
         }
     }
 }

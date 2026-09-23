@@ -28,10 +28,16 @@ internal sealed class SourceWriter
         return this;
     }
 
-    /// <summary>Writes <paramref name="header"/> and <c>{</c>; disposing the scope writes <c>}</c>.</summary>
+    /// <summary>
+    /// Writes <paramref name="header"/> (if any) and <c>{</c>; disposing the scope writes <c>}</c>.
+    /// </summary>
     public Scope Block(string header, string closing = "}")
     {
-        Line(header);
+        if (header.Length > 0)
+        {
+            Line(header);
+        }
+
         Line("{");
         _depth++;
         return new Scope(this, closing);

@@ -63,3 +63,11 @@ public partial struct Point
     public int X { get; set; }
     public int Y { get; set; }
 }
+
+/// <summary>Required and init-only members materialise through the object initializer.</summary>
+[ArrowSerializable]
+public sealed partial class InitOnlyRow
+{
+    public required string Name { get; init; }
+    public int? Rank { get; init; }
+}

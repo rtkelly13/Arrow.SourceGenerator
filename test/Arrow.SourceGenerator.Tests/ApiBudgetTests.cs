@@ -18,6 +18,8 @@ public sealed partial class ApiBudgetTests
     /// </summary>
     private static readonly string[] CompanionOperations =
     [
+        "static FromRecordBatch(Apache.Arrow.RecordBatch batch) -> Model[]",
+        "static FromRecordBatches(System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch> batches) -> System.Collections.Generic.IEnumerable<Model>",
         "static Schema.get -> Apache.Arrow.Schema",
         "static ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Model> rows) -> Apache.Arrow.RecordBatch",
         "static ToRecordBatches(System.Collections.Generic.IEnumerable<Model> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>",

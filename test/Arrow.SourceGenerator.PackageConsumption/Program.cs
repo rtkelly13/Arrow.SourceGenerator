@@ -19,8 +19,15 @@ if (batch.Length != 1 || !batch.Column(1).IsNull(0))
     return 1;
 }
 
+ConsumerOrder[] read = ConsumerOrderArrow.FromRecordBatch(batch);
+if (read is not [{ Id: 7, Customer: null }])
+{
+    Console.Error.WriteLine("Unexpected FromRecordBatch output");
+    return 1;
+}
+
 Console.WriteLine(
-    $"Arrow.SourceGenerator package consumption: schema ({string.Join(", ", fields)}) and write OK"
+    $"Arrow.SourceGenerator package consumption: schema ({string.Join(", ", fields)}) write and read OK"
 );
 return 0;
 

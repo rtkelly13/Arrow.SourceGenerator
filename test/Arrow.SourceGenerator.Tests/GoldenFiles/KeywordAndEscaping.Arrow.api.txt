@@ -1,5 +1,7 @@
 #nullable enable
 static Golden.@namespace.Outer.KeywordAndEscapingArrow
+static Golden.@namespace.Outer.KeywordAndEscapingArrow.FromRecordBatch(Apache.Arrow.RecordBatch batch) -> Golden.@namespace.Outer.KeywordAndEscaping[]
+static Golden.@namespace.Outer.KeywordAndEscapingArrow.FromRecordBatches(System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch> batches) -> System.Collections.Generic.IEnumerable<Golden.@namespace.Outer.KeywordAndEscaping>
 static Golden.@namespace.Outer.KeywordAndEscapingArrow.Schema.get -> Apache.Arrow.Schema
 static Golden.@namespace.Outer.KeywordAndEscapingArrow.ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Golden.@namespace.Outer.KeywordAndEscaping> rows) -> Apache.Arrow.RecordBatch
 static Golden.@namespace.Outer.KeywordAndEscapingArrow.ToRecordBatches(System.Collections.Generic.IEnumerable<Golden.@namespace.Outer.KeywordAndEscaping> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>
