@@ -4,8 +4,10 @@ Compile-time, reflection-free mapping between ordinary .NET models and
 [Apache Arrow](https://arrow.apache.org/) — generated `Schema`, model collection → `RecordBatch`,
 and `RecordBatch` → model collection, with strict validation and Native AOT support.
 
-> **Status: pre-0.1, under construction.** The repository is being built up milestone by milestone
-> (docs/00-DESIGN-GOALS.md §39). Nothing here is released yet.
+> **Status: pre-0.1.** Foundations 0–6 of docs/00-DESIGN-GOALS.md §39 are in place: discovery,
+> planning, `Schema`, both conversion directions, the typed view, and type adapters, gated by
+> golden/API-budget tests, Native AOT, package consumption and PyArrow interop. Nothing is
+> released yet. Structural types (struct/list/map) and a lossless NodaTime package are next.
 
 ## Intended shape
 
@@ -29,6 +31,7 @@ A small, deliberately budgeted public surface per model; everything else is inte
 | `test/Arrow.SourceGenerator.Tests` | Unit, generator-driver, golden and API-baseline tests. |
 | `test/Arrow.SourceGenerator.AotTest` | Native AOT gate — published and executed natively in CI. |
 | `test/Arrow.SourceGenerator.PackageConsumption` | Consumes the packed `.nupkg` files like an outside project. |
+| `test/Arrow.SourceGenerator.Interop` + `scripts/pyarrow_interop.py` | Two-way validation against PyArrow. |
 | `benchmarks/Arrow.SourceGenerator.Benchmarks` | BenchmarkDotNet, always against a hand-written Apache.Arrow baseline. |
 | `samples/Basic`, `samples/NodaTime` | Runnable end-to-end usage; NodaTime shows the adapter model. |
 | `docs/` | Design goals and the contracts each capability must satisfy. |

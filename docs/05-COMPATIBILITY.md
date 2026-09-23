@@ -9,6 +9,21 @@
 | Consumer target framework | net8.0 | net8.0, net10.0 | `DateOnly`/`TimeOnly` members need net6.0+; the floor is what CI executes. |
 | Attributes package | netstandard2.0 | — | Attributes only; no runtime behaviour. |
 
+## Interoperability evidence
+
+| Check | Where | What it proves |
+| --- | --- | --- |
+| Apache.Arrow typed-array inspection | `test/Arrow.SourceGenerator.Tests/Runtime` | Exact stored encodings for every P0 kind. |
+| Apache.Arrow IPC round trip | `IpcRoundTripTests`, AOT test | Offsets, validity bitmaps and schemas survive serialisation. |
+| PyArrow reads generated output | CI, `scripts/pyarrow_interop.py verify` | An independent implementation agrees on schema (types, units, timezone, decimal parameters, nullability) and every value, and `Table.validate(full=True)` passes. |
+| Generated reader accepts PyArrow output | CI, `scripts/pyarrow_interop.py produce` | PyArrow defaults (every field nullable, multiple batches) materialise into the expected rows. |
+
+The interop rows (`test/Arrow.SourceGenerator.Interop/InteropRow.cs`, mirrored in the script)
+include the boundaries that break naïve mappings: years 1 and 9999, pre-epoch dates, microsecond
+precision, `ulong.MaxValue`, the largest `Decimal128(18, 4)`, empty strings and binaries, and GUIDs
+in RFC 4122 byte order (compared against Python's `uuid.bytes`). pyarrow is pinned in the script's
+PEP 723 header. Python is used for this external check only; every other script and tool is C#.
+
 ## Widening a floor
 
 Before a floor moves, the package-consumption project is built against the minimum supported,
