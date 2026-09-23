@@ -137,6 +137,28 @@ public sealed class DiscoveryTests
     }
 
     [Fact]
+    public void TargetNestedInAnInterfaceReopensItAsAnInterface()
+    {
+        GeneratorOutcome outcome = GeneratorHarness.Run(
+            """
+            using Arrow.SourceGenerator;
+            namespace Demo;
+
+            public partial interface IOuter
+            {
+                [ArrowSerializable]
+                public partial class Inner { public int X { get; set; } }
+            }
+            """
+        );
+
+        outcome.CompilationProblems.ShouldBeEmpty();
+        string source = outcome.SourceFor(".Arrow.g.cs");
+        source.ShouldContain("partial interface IOuter");
+        source.ShouldNotContain("partial class IOuter");
+    }
+
+    [Fact]
     public void GlobalNamespaceAndInternalTargetsCompile()
     {
         GeneratorOutcome outcome = GeneratorHarness.Run(

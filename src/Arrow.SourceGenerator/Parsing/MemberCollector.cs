@@ -65,16 +65,18 @@ internal static class MemberCollector
                         ignoredRequired.Add(unmappedProperty);
                         break;
 
+                    // A required field of any accessibility must be initialised, and the generated
+                    // reader never maps fields, so it is always reported (ARROW018) below.
+                    case IFieldSymbol { IsRequired: true, IsStatic: false } requiredField:
+                        ignoredRequired.Add(requiredField);
+                        break;
+
                     case IFieldSymbol field
                         when !field.IsStatic
                             && !field.IsConst
                             && !field.IsImplicitlyDeclared
                             && field.DeclaredAccessibility == Accessibility.Public:
-                        if (field.IsRequired)
-                        {
-                            ignoredRequired.Add(field);
-                        }
-                        else if (!HasAttribute(field, AttributeNames.Ignore))
+                        if (!HasAttribute(field, AttributeNames.Ignore))
                         {
                             diagnostics.Add(
                                 DiagnosticInfo.Create(

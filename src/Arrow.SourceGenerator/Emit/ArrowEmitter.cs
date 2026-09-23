@@ -66,6 +66,7 @@ internal static class ArrowEmitter
             TargetKind.Struct => "struct",
             TargetKind.RecordClass => "record",
             TargetKind.RecordStruct => "record struct",
+            TargetKind.Interface => "interface",
             _ => "class",
         };
 }

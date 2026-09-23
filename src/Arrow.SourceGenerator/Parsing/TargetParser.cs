@@ -152,12 +152,15 @@ internal static class TargetParser
 
         ISymbol scope = (ISymbol?)type.ContainingType ?? type.ContainingNamespace;
         string companion = type.Name + "Arrow";
-        bool taken = scope switch
+        // Only a non-generic declaration can conflict: C# lets OrderArrow and OrderArrow<T> share a
+        // declaration space, so a generic namesake is no collision with the arity-zero companion.
+        IEnumerable<ISymbol> namesakes = scope switch
         {
-            INamespaceSymbol ns => ns.GetMembers(companion).Any(),
-            INamedTypeSymbol owner => owner.GetMembers(companion).Any(),
-            _ => false,
+            INamespaceSymbol ns => ns.GetMembers(companion),
+            INamedTypeSymbol owner => owner.GetMembers(companion),
+            _ => Enumerable.Empty<ISymbol>(),
         };
+        bool taken = namesakes.Any(symbol => symbol is not INamedTypeSymbol { Arity: > 0 });
         if (taken)
         {
             diagnostics.Add(
@@ -233,13 +236,15 @@ internal static class TargetParser
         ?? type.Locations.FirstOrDefault();
 
     private static TargetKind KindOf(INamedTypeSymbol type) =>
-        (type.IsRecord, type.IsValueType) switch
-        {
-            (true, true) => TargetKind.RecordStruct,
-            (true, false) => TargetKind.RecordClass,
-            (false, true) => TargetKind.Struct,
-            _ => TargetKind.Class,
-        };
+        type.TypeKind == TypeKind.Interface
+            ? TargetKind.Interface
+            : (type.IsRecord, type.IsValueType) switch
+            {
+                (true, true) => TargetKind.RecordStruct,
+                (true, false) => TargetKind.RecordClass,
+                (false, true) => TargetKind.Struct,
+                _ => TargetKind.Class,
+            };
 
     /// <summary>
     /// A top-level companion is as visible as the target can be outside its assembly; a nested

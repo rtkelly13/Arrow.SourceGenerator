@@ -65,6 +65,17 @@ public sealed class DiagnosticTests
         );
 
     [Fact]
+    public void GenericNamesakeOfTheCompanionIsNoCollision()
+    {
+        GeneratorOutcome outcome = Run(
+            "[ArrowSerializable] public partial class Order { public int Id { get; set; } }\npublic static class OrderArrow<T> { }"
+        );
+        outcome.GeneratorDiagnostics.ShouldBeEmpty();
+        outcome.CompilationProblems.ShouldBeEmpty();
+        outcome.GeneratedSources.ShouldNotBeEmpty();
+    }
+
+    [Fact]
     public void NoMappedMembersIsAWarningAndStillEmits() =>
         ShouldReport("[ArrowSerializable] public partial class Empty { }", "ARROW012", emits: true);
 
@@ -132,6 +143,13 @@ public sealed class DiagnosticTests
     public void IgnoredRequiredMember() =>
         ShouldReport(
             "[ArrowSerializable] public partial class Order { [ArrowIgnore] public required int Id { get; set; } public int X { get; set; } }",
+            "ARROW018"
+        );
+
+    [Fact]
+    public void NonPublicRequiredFieldIsReportedNotSilentlySkipped() =>
+        ShouldReport(
+            "[ArrowSerializable] internal partial class Order { internal required int Count; public int Id { get; set; } }",
             "ARROW018"
         );
 

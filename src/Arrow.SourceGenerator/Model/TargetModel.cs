@@ -34,6 +34,9 @@ internal enum TargetKind
     Struct,
     RecordClass,
     RecordStruct,
+
+    /// <summary>Only ever a containing type: an interface can hold a nested target.</summary>
+    Interface,
 }
 
 /// <summary>
