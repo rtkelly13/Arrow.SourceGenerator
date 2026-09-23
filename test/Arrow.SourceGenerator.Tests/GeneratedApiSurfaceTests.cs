@@ -69,6 +69,19 @@ public sealed class GeneratedApiSurfaceTests
     }
 
     [Fact]
+    public void ReopenedPartialContainersAreTransparent()
+    {
+        const string nested =
+            "namespace N { partial class Outer { public static partial class InnerArrow { public static int X => 1; } } }";
+
+        GeneratedApiSurface
+            .CreateBaseline(nested)
+            .ShouldBe(
+                "#nullable enable\nstatic N.Outer.InnerArrow\nstatic N.Outer.InnerArrow.X.get -> int\n"
+            );
+    }
+
+    [Fact]
     public void RenderingIsIndependentOfDeclarationOrder()
     {
         const string forwards = "namespace N { public class A { public int X; public int Y; } }";

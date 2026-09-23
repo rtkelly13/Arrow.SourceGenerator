@@ -1,0 +1,2 @@
+# generated API shape summary
+TYPES=1 MEMBERS=0 PARAMETERS=0
