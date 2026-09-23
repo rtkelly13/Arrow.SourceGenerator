@@ -22,6 +22,14 @@
       Attributes package declares it as a dependency because generated code calls it directly.
     -->
         <PackageVersion Include="Apache.Arrow" Version="23.0.0" />
+        <!--
+      Transitive security pin. Apache.Arrow's netstandard2.0 dependency graph resolves
+      System.Text.RegularExpressions 4.3.0 (GHSA-cmhx-cq75-c4mj, high); transitive pinning lifts
+      every project in this repository to the patched 4.3.1, and the pin is carried into the
+      packages as a runtime-only dependency so netstandard2.0 consumers get it too. Consumers on
+      net8.0+ use the framework assembly.
+    -->
+        <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
 
         <!-- Tests -->
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
