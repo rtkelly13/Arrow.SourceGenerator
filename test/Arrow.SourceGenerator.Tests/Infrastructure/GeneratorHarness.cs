@@ -46,7 +46,13 @@ internal static class GeneratorHarness
                 nullableContextOptions: NullableContextOptions.Enable,
                 // Documentation is parsed (so malformed XML docs in emitted code are reported) but
                 // test models are not required to document themselves.
-                specificDiagnosticOptions: [new("CS1591", ReportDiagnostic.Suppress)]
+                // CS1701/CS1702 (assembly unification) are suppressed by the SDK in real builds too.
+                specificDiagnosticOptions:
+                [
+                    new("CS1591", ReportDiagnostic.Suppress),
+                    new("CS1701", ReportDiagnostic.Suppress),
+                    new("CS1702", ReportDiagnostic.Suppress),
+                ]
             )
         );
 

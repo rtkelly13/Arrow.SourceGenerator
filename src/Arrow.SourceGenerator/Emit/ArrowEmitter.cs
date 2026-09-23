@@ -64,6 +64,10 @@ internal static class ArrowEmitter
         )
         {
             SchemaEmitter.Emit(writer, context);
+            writer.Line();
+            ToRecordBatchEmitter.Emit(writer, context);
+            writer.Line();
+            HelperEmitter.Emit(writer, context);
         }
     }
 

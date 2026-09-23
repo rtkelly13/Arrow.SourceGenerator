@@ -27,6 +27,151 @@ namespace Golden.@namespace
                 };
                 return new global::Apache.Arrow.Schema(fields, null);
             }
+
+            /// <summary>
+            /// Converts <paramref name="rows"/> into one <c>RecordBatch</c> with <see cref="global::Golden.@namespace.Outer.KeywordAndEscaping"/>'s
+            /// <see cref="Schema"/>. An empty collection produces a valid zero-length batch.
+            /// </summary>
+            /// <param name="rows">The rows. Enumerated once per field; must not change meanwhile.</param>
+            /// <returns>A new batch that owns its buffers; the caller disposes it.</returns>
+            /// <exception cref="global::System.ArgumentException">A row is null, a non-nullable
+            /// reference member is null, or a value does not fit its Arrow type.</exception>
+            /// <exception cref="global::System.InvalidOperationException">The collection changed while
+            /// it was being converted.</exception>
+            public static global::Apache.Arrow.RecordBatch ToRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.@namespace.Outer.KeywordAndEscaping> rows)
+            {
+                if (rows is null) throw new global::System.ArgumentNullException(nameof(rows));
+                return BuildRecordBatch(rows, rows.Count);
+            }
+
+            /// <summary>
+            /// Converts a sequence of <see cref="global::Golden.@namespace.Outer.KeywordAndEscaping"/> into consecutive batches of at most
+            /// <paramref name="batchSize"/> rows. Lazy: each batch is built as it is requested, and
+            /// an empty sequence yields no batches.
+            /// </summary>
+            /// <param name="rows">The rows, enumerated once.</param>
+            /// <param name="batchSize">The maximum rows per batch; at least 1.</param>
+            /// <returns>Batches the caller owns and disposes.</returns>
+            public static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatches(global::System.Collections.Generic.IEnumerable<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int batchSize)
+            {
+                if (rows is null) throw new global::System.ArgumentNullException(nameof(rows));
+                if (batchSize < 1) throw new global::System.ArgumentOutOfRangeException(nameof(batchSize), batchSize, "batchSize must be at least 1.");
+                return ToRecordBatchesIterator(rows, batchSize);
+            }
+
+            private static global::System.Collections.Generic.IEnumerable<global::Apache.Arrow.RecordBatch> ToRecordBatchesIterator(global::System.Collections.Generic.IEnumerable<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int batchSize)
+            {
+                var chunk = new global::System.Collections.Generic.List<global::Golden.@namespace.Outer.KeywordAndEscaping>(global::System.Math.Min(batchSize, 1024));
+                global::Apache.Arrow.RecordBatch batch;
+                foreach (var row in rows)
+                {
+                    chunk.Add(row);
+                    if (chunk.Count == batchSize)
+                    {
+                        batch = BuildRecordBatch(chunk, chunk.Count);
+                        chunk.Clear();
+                        yield return batch;
+                    }
+                }
+                if (chunk.Count > 0)
+                {
+                    batch = BuildRecordBatch(chunk, chunk.Count);
+                    chunk.Clear();
+                    yield return batch;
+                }
+            }
+
+            private static global::Apache.Arrow.RecordBatch BuildRecordBatch(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int count)
+            {
+                var columns = new global::Apache.Arrow.IArrowArray[3];
+                try
+                {
+                    columns[0] = BuildColumn_class(rows, count);
+                    columns[1] = BuildColumn_event(rows, count);
+                    columns[2] = BuildColumn_Plain(rows, count);
+                    return new global::Apache.Arrow.RecordBatch(Schema, columns, count);
+                }
+                catch
+                {
+                    foreach (var column in columns)
+                    {
+                        column?.Dispose();
+                    }
+                    throw;
+                }
+            }
+
+            // quote"back\slash: Int32
+            private static global::Apache.Arrow.IArrowArray BuildColumn_class(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int count)
+            {
+                var values = new global::Apache.Arrow.ArrowBuffer.Builder<int>(count);
+                int index = 0;
+                foreach (var row in rows)
+                {
+                    if (index >= count) ThrowCollectionChanged();
+                    if (row is null) ThrowNullRow(index);
+                    var value = row.@class;
+                    values.Append(value);
+                    index++;
+                }
+                if (index != count) ThrowCollectionChanged();
+                var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[0].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+                return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+            }
+
+            // new line <xml> & */: Utf8
+            private static global::Apache.Arrow.IArrowArray BuildColumn_event(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int count)
+            {
+                var builder = new global::Apache.Arrow.StringArray.Builder();
+                builder.Reserve(count);
+                int index = 0;
+                foreach (var row in rows)
+                {
+                    if (index >= count) ThrowCollectionChanged();
+                    if (row is null) ThrowNullRow(index);
+                    if (row.@event is { } value)
+                    {
+                        builder.Append(value);
+                    }
+                    else
+                    {
+                        builder.AppendNull();
+                    }
+                    index++;
+                }
+                if (index != count) ThrowCollectionChanged();
+                return builder.Build();
+            }
+
+            // unicode-é-中: Int64
+            private static global::Apache.Arrow.IArrowArray BuildColumn_Plain(global::System.Collections.Generic.IReadOnlyCollection<global::Golden.@namespace.Outer.KeywordAndEscaping> rows, int count)
+            {
+                var values = new global::Apache.Arrow.ArrowBuffer.Builder<long>(count);
+                int index = 0;
+                foreach (var row in rows)
+                {
+                    if (index >= count) ThrowCollectionChanged();
+                    if (row is null) ThrowNullRow(index);
+                    var value = row.Plain;
+                    values.Append(value);
+                    index++;
+                }
+                if (index != count) ThrowCollectionChanged();
+                var data = new global::Apache.Arrow.ArrayData(Schema.FieldsList[2].DataType, count, 0, 0, new[] { global::Apache.Arrow.ArrowBuffer.Empty, values.Build() });
+                return global::Apache.Arrow.ArrowArrayFactory.BuildArray(data);
+            }
+
+            [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
+            private static void ThrowCollectionChanged()
+            {
+                throw new global::System.InvalidOperationException("The row collection changed while it was being converted: it no longer yields Count rows.");
+            }
+
+            [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
+            private static void ThrowNullRow(int index)
+            {
+                throw new global::System.ArgumentException("Row " + index + " is null; " + "KeywordAndEscaping" + " rows must not be null.", "rows");
+            }
         }
     }
 }

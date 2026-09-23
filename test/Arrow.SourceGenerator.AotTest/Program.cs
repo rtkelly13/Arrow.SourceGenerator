@@ -17,6 +17,7 @@ internal static class Program
         HandWrittenBaselineRoundTripsThroughIpc();
         GeneratedCompanionExists();
         GeneratedSchemaMatchesTheModel();
+        GeneratedWritePathSurvivesIpc();
 
         Console.WriteLine($"Arrow.SourceGenerator AOT checks passed: {_checks}");
         return 0;
@@ -59,10 +60,47 @@ internal static class Program
     private static void GeneratedSchemaMatchesTheModel()
     {
         Schema schema = AotOrderArrow.Schema;
-        Check(schema.FieldsList.Count == 3, "schema field count");
+        Check(schema.FieldsList.Count == 9, "schema field count");
         Check(schema.GetFieldByName("Id").DataType.TypeId == ArrowTypeId.Int64, "schema int64");
         Check(!schema.GetFieldByName("Customer").IsNullable, "schema required utf8");
         Check(schema.GetFieldByName("Quantity").IsNullable, "schema nullable int32");
+    }
+
+    internal static AotOrder[] SampleOrders() =>
+        [
+            new AotOrder
+            {
+                Id = 1,
+                Customer = "ada",
+                Quantity = 3,
+                Attachment = [1, 2, 3],
+                Total = 12.3456m,
+                Day = new DateOnly(2024, 2, 29),
+                PlacedAt = new DateTimeOffset(2024, 2, 29, 12, 0, 0, TimeSpan.FromHours(1)),
+                Latency = TimeSpan.FromMilliseconds(15),
+                Reference = Guid.Parse("00112233-4455-6677-8899-aabbccddeeff"),
+            },
+            new AotOrder { Id = 2, Customer = "grace" },
+        ];
+
+    private static void GeneratedWritePathSurvivesIpc()
+    {
+        using RecordBatch batch = AotOrderArrow.ToRecordBatch(SampleOrders());
+        using RecordBatch copy = IpcRoundTrip(batch);
+        Check(copy.Length == 2, "write length");
+        Check(((StringArray)copy.Column(1)).GetString(1) == "grace", "write utf8");
+        Check(copy.Column(2).IsNull(1), "write nullable int null");
+        Check(((BinaryArray)copy.Column(3)).GetBytes(0).Length == 3, "write binary");
+        Check(((Decimal128Array)copy.Column(4)).GetValue(0) == 12.3456m, "write decimal");
+        Check(((Date32Array)copy.Column(5)).Values[0] == 19782, "write date32");
+        Check(
+            ((TimestampArray)copy.Column(6)).Values[0] == 1709204400000000L,
+            "write utc timestamp"
+        );
+        Check(
+            ((Apache.Arrow.Arrays.FixedSizeBinaryArray)copy.Column(8)).GetBytes(0)[15] == 0xff,
+            "write guid big-endian"
+        );
     }
 
     internal static RecordBatch IpcRoundTrip(RecordBatch batch)

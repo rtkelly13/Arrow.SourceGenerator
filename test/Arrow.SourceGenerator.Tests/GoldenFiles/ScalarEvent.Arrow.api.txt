@@ -1,3 +1,5 @@
 #nullable enable
 static Golden.Events.ScalarEventArrow
 static Golden.Events.ScalarEventArrow.Schema.get -> Apache.Arrow.Schema
+static Golden.Events.ScalarEventArrow.ToRecordBatch(System.Collections.Generic.IReadOnlyCollection<Golden.Events.ScalarEvent> rows) -> Apache.Arrow.RecordBatch
+static Golden.Events.ScalarEventArrow.ToRecordBatches(System.Collections.Generic.IEnumerable<Golden.Events.ScalarEvent> rows, int batchSize) -> System.Collections.Generic.IEnumerable<Apache.Arrow.RecordBatch>
