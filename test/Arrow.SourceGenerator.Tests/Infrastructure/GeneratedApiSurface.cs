@@ -108,6 +108,10 @@ internal static class GeneratedApiSurface
 
                     break;
 
+                case TypeDeclarationSyntax reopened when IsReopenedContainer(reopened):
+                    VisitMembers(reopened, Qualify(container, reopened.Identifier.Text));
+                    break;
+
                 case BaseTypeDeclarationSyntax type when IsVisible(type.Modifiers, owner: null):
                     VisitType(type, container);
                     break;
@@ -152,6 +156,11 @@ internal static class GeneratedApiSurface
                 return;
             }
 
+            VisitMembers(declaration, typeName);
+        }
+
+        private void VisitMembers(TypeDeclarationSyntax declaration, string typeName)
+        {
             foreach (MemberDeclarationSyntax member in declaration.Members)
             {
                 VisitMember(member, typeName, declaration);
@@ -166,6 +175,10 @@ internal static class GeneratedApiSurface
         {
             switch (member)
             {
+                case TypeDeclarationSyntax reopened when IsReopenedContainer(reopened):
+                    VisitMembers(reopened, typeName + "." + reopened.Identifier.Text);
+                    break;
+
                 case BaseTypeDeclarationSyntax nested when IsVisible(nested.Modifiers, owner):
                     VisitType(nested, typeName);
                     break;
@@ -269,6 +282,21 @@ internal static class GeneratedApiSurface
             return string.Join(", ", parameters.Parameters.Select(Parameter));
         }
     }
+
+    /// <summary>
+    /// A <c>partial</c> declaration with no accessibility modifier re-opens a type declared
+    /// elsewhere (the generator nests a companion inside the target's containing types). Its
+    /// accessibility is not knowable from this file, so it is transparent: it contributes no line
+    /// of its own and its members are judged on their own modifiers.
+    /// </summary>
+    private static bool IsReopenedContainer(TypeDeclarationSyntax type) =>
+        type.Modifiers.Any(SyntaxKind.PartialKeyword)
+        && !type.Modifiers.Any(m =>
+            m.IsKind(SyntaxKind.PublicKeyword)
+            || m.IsKind(SyntaxKind.InternalKeyword)
+            || m.IsKind(SyntaxKind.ProtectedKeyword)
+            || m.IsKind(SyntaxKind.PrivateKeyword)
+        );
 
     private static string Parameter(ParameterSyntax parameter)
     {

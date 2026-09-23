@@ -47,6 +47,12 @@
         <ProjectReference Include="..\Arrow.SourceGenerator.Attributes\Arrow.SourceGenerator.Attributes.csproj" />
     </ItemGroup>
 
+    <!-- RS2008: every diagnostic id is release-tracked. -->
+    <ItemGroup>
+        <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+        <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
     <Target Name="PackAnalyzer">
         <ItemGroup>
             <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers/dotnet/cs" />

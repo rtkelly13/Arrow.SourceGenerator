@@ -15,6 +15,7 @@ internal static class Program
     private static int Main()
     {
         HandWrittenBaselineRoundTripsThroughIpc();
+        GeneratedCompanionExists();
 
         Console.WriteLine($"Arrow.SourceGenerator AOT checks passed: {_checks}");
         return 0;
@@ -46,6 +47,13 @@ internal static class Program
         Check(((StringArray)roundTripped.Column(1)).GetString(0) == "a", "baseline utf8");
         Check(roundTripped.Column(1).IsNull(1), "baseline null");
     }
+
+    /// <summary>The generator ran under the AOT build and emitted the companion type.</summary>
+    private static void GeneratedCompanionExists() =>
+        Check(
+            typeof(AotOrderArrow).IsAbstract && typeof(AotOrderArrow).IsSealed,
+            "companion is static"
+        );
 
     internal static RecordBatch IpcRoundTrip(RecordBatch batch)
     {

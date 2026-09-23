@@ -1,1 +1,11 @@
 #nullable enable
+Arrow.SourceGenerator.ArrowColumnAttribute
+Arrow.SourceGenerator.ArrowColumnAttribute.ArrowColumnAttribute() -> void
+Arrow.SourceGenerator.ArrowColumnAttribute.ArrowColumnAttribute(string! name) -> void
+Arrow.SourceGenerator.ArrowColumnAttribute.Name.get -> string?
+Arrow.SourceGenerator.ArrowColumnAttribute.Order.get -> int
+Arrow.SourceGenerator.ArrowColumnAttribute.Order.set -> void
+Arrow.SourceGenerator.ArrowIgnoreAttribute
+Arrow.SourceGenerator.ArrowIgnoreAttribute.ArrowIgnoreAttribute() -> void
+Arrow.SourceGenerator.ArrowSerializableAttribute
+Arrow.SourceGenerator.ArrowSerializableAttribute.ArrowSerializableAttribute() -> void
