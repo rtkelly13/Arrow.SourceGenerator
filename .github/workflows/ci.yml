@@ -64,6 +64,22 @@ jobs:
           dotnet test Arrow.SourceGenerator.slnx --configuration Release --no-build
           --collect:"XPlat Code Coverage" --results-directory ./test-results
 
+      # External validation (docs/05-COMPATIBILITY.md): an independent Arrow implementation reads
+      # what the generated writer produced, and produces what the generated reader must accept.
+      # pyarrow is pinned in the script's PEP 723 header; uv provisions it.
+      - name: Install uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+
+      - name: Verify interoperability with PyArrow
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/interop"
+          mkdir -p "$out"
+          dotnet run --project test/Arrow.SourceGenerator.Interop --configuration Release --no-build -- write "$out/generated.arrow"
+          uv run scripts/pyarrow_interop.py verify "$out/generated.arrow"
+          uv run scripts/pyarrow_interop.py produce "$out/pyarrow.arrow"
+          dotnet run --project test/Arrow.SourceGenerator.Interop --configuration Release --no-build -- read "$out/pyarrow.arrow"
+
       - name: Run samples
         run: |
           set -euo pipefail

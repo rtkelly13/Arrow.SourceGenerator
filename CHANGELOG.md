@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- External interoperability gate: the generated writer's IPC output is verified by PyArrow 25
+  (schema, types, units, timezone, decimal parameters, nullability, values, full validation) and a
+  PyArrow-produced file (PyArrow defaults, two batches) must materialise into the expected rows.
 - Foundation 6: static type adapters. `[assembly: ArrowTypeAdapter(typeof(A))]` registers
   `A.ToStorage`/`A.FromStorage` as the default mapping for a type with no built-in mapping, in this
   assembly and any that references it; `[ArrowAdapter(typeof(A))]` overrides per member (including
