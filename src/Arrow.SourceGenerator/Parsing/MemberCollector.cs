@@ -332,6 +332,29 @@ internal static class MemberCollector
     private static bool HasAttribute(ISymbol symbol, string fullName) =>
         FindAttribute(symbol, fullName) is not null;
 
-    private static AttributeData? FindAttribute(ISymbol symbol, string fullName) =>
-        symbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == fullName);
+    /// <summary>
+    /// The attribute on <paramref name="symbol"/>, or for a property override the nearest one on
+    /// the property it overrides. The Arrow member attributes are <c>Inherited = true</c>, but
+    /// Roslyn's <c>GetAttributes()</c> returns only those written on the symbol itself, and member
+    /// collection keeps the override in place of the base declaration.
+    /// </summary>
+    private static AttributeData? FindAttribute(ISymbol symbol, string fullName)
+    {
+        for (
+            ISymbol? current = symbol;
+            current is not null;
+            current = (current as IPropertySymbol)?.OverriddenProperty
+        )
+        {
+            AttributeData? found = current
+                .GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == fullName);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
 }

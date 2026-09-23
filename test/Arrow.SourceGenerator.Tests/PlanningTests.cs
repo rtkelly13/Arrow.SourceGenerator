@@ -53,6 +53,65 @@ public sealed class PlanningTests
     }
 
     [Fact]
+    public void AnnotationsOnAnOverriddenBasePropertyAreInherited()
+    {
+        GeneratorOutcome outcome = GeneratorHarness.Run(
+            """
+            using Arrow.SourceGenerator;
+            namespace Demo;
+
+            public class Priced
+            {
+                [ArrowDecimal(10, 2)] public virtual decimal Price { get; set; }
+                [ArrowColumn("sku")] public virtual string Code { get; set; } = "";
+                [ArrowIgnore] public virtual int Internal { get; set; }
+            }
+
+            [ArrowSerializable]
+            public partial class Item : Priced
+            {
+                public override decimal Price { get; set; }
+                public override string Code { get; set; } = "";
+                public override int Internal { get; set; }
+            }
+            """
+        );
+
+        outcome.GeneratorDiagnostics.ShouldBeEmpty();
+        outcome.CompilationProblems.ShouldBeEmpty();
+        string source = outcome.SourceFor(".Arrow.g.cs");
+        source.ShouldContain(
+            "new global::Apache.Arrow.Field(\"Price\", new global::Apache.Arrow.Types.Decimal128Type(10, 2)"
+        );
+        source.ShouldContain("new global::Apache.Arrow.Field(\"sku\",");
+        source.ShouldNotContain("\"Internal\"");
+    }
+
+    [Fact]
+    public void AnAnnotationOnTheOverrideWinsOverTheBase()
+    {
+        GeneratorOutcome outcome = GeneratorHarness.Run(
+            """
+            using Arrow.SourceGenerator;
+            namespace Demo;
+
+            public class Priced { [ArrowDecimal(10, 2)] public virtual decimal Price { get; set; } }
+
+            [ArrowSerializable]
+            public partial class Item : Priced
+            {
+                [ArrowDecimal(18, 4)] public override decimal Price { get; set; }
+            }
+            """
+        );
+
+        outcome.GeneratorDiagnostics.ShouldBeEmpty();
+        outcome
+            .SourceFor(".Arrow.g.cs")
+            .ShouldContain("new global::Apache.Arrow.Types.Decimal128Type(18, 4)");
+    }
+
+    [Fact]
     public void IgnoringAnUnsupportedMemberResolvesTheError()
     {
         GeneratorOutcome outcome = Run(
