@@ -199,7 +199,9 @@ internal static class FromRecordBatchEmitter
         );
         writer.Line("/// column ordinal of each field. Throws once, listing every problem found.");
         writer.Line("/// </summary>");
-        using (writer.Block($"private static int[] ResolveColumns({Arrow}.RecordBatch batch)"))
+        // Internal, not private: the typed view's constructor validates through it, so no path
+        // can build a view over unchecked arrays.
+        using (writer.Block($"internal static int[] ResolveColumns({Arrow}.RecordBatch batch)"))
         {
             writer.Line($"var ordinals = new int[{context.Plan.Fields.Count}];");
             writer.Line("global::System.Collections.Generic.List<string>? errors = null;");

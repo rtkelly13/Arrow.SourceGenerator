@@ -67,6 +67,33 @@ public sealed class TypedViewTests
         Should.Throw<ArgumentNullException>(() => OrderArrow.View(null!));
     }
 
+    /// <summary>
+    /// Regression: generated code lives in the consumer's assembly, so its internal constructor is
+    /// callable there. It used to take the arrays as arguments, letting any code build a view over
+    /// unchecked arrays; the only constructor now validates the batch itself.
+    /// </summary>
+    [Fact]
+    public void TheViewConstructorValidatesToo()
+    {
+        using var wrong = new RecordBatch(
+            new Schema.Builder()
+                .Field(f => f.Name("Id").DataType(Apache.Arrow.Types.Int32Type.Default))
+                .Build(),
+            [new Int32Array.Builder().Append(1).Build()],
+            1
+        );
+
+        Should
+            .Throw<InvalidDataException>(() => new OrderArrowView(wrong))
+            .Message.ShouldBe(
+                Should.Throw<InvalidDataException>(() => OrderArrow.View(wrong)).Message
+            );
+        Should.Throw<ArgumentNullException>(() => new OrderArrowView(null!));
+
+        using RecordBatch batch = OrderArrow.ToRecordBatch([new Order(1, "a", 2.5m)]);
+        new OrderArrowView(batch).Id.GetValue(0).ShouldBe(1);
+    }
+
     [Fact]
     public void EveryP0KindHasATypedArrayOnTheView()
     {

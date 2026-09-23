@@ -807,7 +807,7 @@ namespace Golden.Events
         /// Checks every assumption the reader makes about <paramref name="batch"/> and returns the
         /// column ordinal of each field. Throws once, listing every problem found.
         /// </summary>
-        private static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
+        internal static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
         {
             var ordinals = new int[27];
             global::System.Collections.Generic.List<string>? errors = null;
@@ -1260,8 +1260,7 @@ namespace Golden.Events
         public static ScalarEventArrowView View(global::Apache.Arrow.RecordBatch batch)
         {
             if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
-            int[] ordinals = ResolveColumns(batch);
-            return new ScalarEventArrowView(batch, (global::Apache.Arrow.BooleanArray)batch.Column(ordinals[0]), (global::Apache.Arrow.Int8Array)batch.Column(ordinals[1]), (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[2]), (global::Apache.Arrow.Int16Array)batch.Column(ordinals[3]), (global::Apache.Arrow.UInt16Array)batch.Column(ordinals[4]), (global::Apache.Arrow.Int32Array)batch.Column(ordinals[5]), (global::Apache.Arrow.UInt32Array)batch.Column(ordinals[6]), (global::Apache.Arrow.Int64Array)batch.Column(ordinals[7]), (global::Apache.Arrow.UInt64Array)batch.Column(ordinals[8]), (global::Apache.Arrow.FloatArray)batch.Column(ordinals[9]), (global::Apache.Arrow.DoubleArray)batch.Column(ordinals[10]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[11]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[12]), (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[13]), (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[14]), (global::Apache.Arrow.Decimal128Array)batch.Column(ordinals[15]), (global::Apache.Arrow.Date32Array)batch.Column(ordinals[16]), (global::Apache.Arrow.Time64Array)batch.Column(ordinals[17]), (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[18]), (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[19]), (global::Apache.Arrow.DurationArray)batch.Column(ordinals[20]), (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[21]), (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[22]), (global::Apache.Arrow.Int32Array)batch.Column(ordinals[23]), (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[24]), (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[25]), (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[26]));
+            return new ScalarEventArrowView(batch);
         }
 
         // DateOnly.DayNumber of 1970-01-01, the Date32 epoch.
@@ -1474,36 +1473,38 @@ namespace Golden.Events
     /// </summary>
     public sealed partial class ScalarEventArrowView
     {
-        internal ScalarEventArrowView(global::Apache.Arrow.RecordBatch batch, global::Apache.Arrow.BooleanArray column0, global::Apache.Arrow.Int8Array column1, global::Apache.Arrow.UInt8Array column2, global::Apache.Arrow.Int16Array column3, global::Apache.Arrow.UInt16Array column4, global::Apache.Arrow.Int32Array column5, global::Apache.Arrow.UInt32Array column6, global::Apache.Arrow.Int64Array column7, global::Apache.Arrow.UInt64Array column8, global::Apache.Arrow.FloatArray column9, global::Apache.Arrow.DoubleArray column10, global::Apache.Arrow.StringArray column11, global::Apache.Arrow.StringArray column12, global::Apache.Arrow.BinaryArray column13, global::Apache.Arrow.BinaryArray column14, global::Apache.Arrow.Decimal128Array column15, global::Apache.Arrow.Date32Array column16, global::Apache.Arrow.Time64Array column17, global::Apache.Arrow.TimestampArray column18, global::Apache.Arrow.TimestampArray column19, global::Apache.Arrow.DurationArray column20, global::Apache.Arrow.Arrays.FixedSizeBinaryArray column21, global::Apache.Arrow.UInt8Array column22, global::Apache.Arrow.Int32Array column23, global::Apache.Arrow.Arrays.FixedSizeBinaryArray column24, global::Apache.Arrow.TimestampArray column25, global::Apache.Arrow.UInt8Array column26)
+        internal ScalarEventArrowView(global::Apache.Arrow.RecordBatch batch)
         {
+            if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+            int[] ordinals = ScalarEventArrow.ResolveColumns(batch);
             Batch = batch;
-            Flag = column0;
-            Tiny = column1;
-            UnsignedTiny = column2;
-            Small = column3;
-            UnsignedSmall = column4;
-            Count = column5;
-            UnsignedCount = column6;
-            Id = column7;
-            UnsignedId = column8;
-            Ratio = column9;
-            Score = column10;
-            Name = column11;
-            Note = column12;
-            Payload = column13;
-            OptionalPayload = column14;
-            Amount = column15;
-            Day = column16;
-            At = column17;
-            LocalWallClock = column18;
-            OccurredAt = column19;
-            Elapsed = column20;
-            CorrelationId = column21;
-            Priority = column22;
-            MaybeCount = column23;
-            MaybeCorrelationId = column24;
-            MaybeOccurredAt = column25;
-            MaybePriority = column26;
+            Flag = (global::Apache.Arrow.BooleanArray)batch.Column(ordinals[0]);
+            Tiny = (global::Apache.Arrow.Int8Array)batch.Column(ordinals[1]);
+            UnsignedTiny = (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[2]);
+            Small = (global::Apache.Arrow.Int16Array)batch.Column(ordinals[3]);
+            UnsignedSmall = (global::Apache.Arrow.UInt16Array)batch.Column(ordinals[4]);
+            Count = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[5]);
+            UnsignedCount = (global::Apache.Arrow.UInt32Array)batch.Column(ordinals[6]);
+            Id = (global::Apache.Arrow.Int64Array)batch.Column(ordinals[7]);
+            UnsignedId = (global::Apache.Arrow.UInt64Array)batch.Column(ordinals[8]);
+            Ratio = (global::Apache.Arrow.FloatArray)batch.Column(ordinals[9]);
+            Score = (global::Apache.Arrow.DoubleArray)batch.Column(ordinals[10]);
+            Name = (global::Apache.Arrow.StringArray)batch.Column(ordinals[11]);
+            Note = (global::Apache.Arrow.StringArray)batch.Column(ordinals[12]);
+            Payload = (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[13]);
+            OptionalPayload = (global::Apache.Arrow.BinaryArray)batch.Column(ordinals[14]);
+            Amount = (global::Apache.Arrow.Decimal128Array)batch.Column(ordinals[15]);
+            Day = (global::Apache.Arrow.Date32Array)batch.Column(ordinals[16]);
+            At = (global::Apache.Arrow.Time64Array)batch.Column(ordinals[17]);
+            LocalWallClock = (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[18]);
+            OccurredAt = (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[19]);
+            Elapsed = (global::Apache.Arrow.DurationArray)batch.Column(ordinals[20]);
+            CorrelationId = (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[21]);
+            Priority = (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[22]);
+            MaybeCount = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[23]);
+            MaybeCorrelationId = (global::Apache.Arrow.Arrays.FixedSizeBinaryArray)batch.Column(ordinals[24]);
+            MaybeOccurredAt = (global::Apache.Arrow.TimestampArray)batch.Column(ordinals[25]);
+            MaybePriority = (global::Apache.Arrow.UInt8Array)batch.Column(ordinals[26]);
         }
 
         /// <summary>The batch this view reads.</summary>

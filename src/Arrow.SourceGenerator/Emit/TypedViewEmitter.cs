@@ -45,19 +45,7 @@ internal static class TypedViewEmitter
             writer.Line(
                 "if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));"
             );
-            writer.Line("int[] ordinals = ResolveColumns(batch);");
-            string arguments = string.Join(
-                ", ",
-                System.Linq.Enumerable.Select(
-                    context.Plan.Fields,
-                    f => $"({ArrowTypes.ArrayClass(f.Leaf)})batch.Column(ordinals[{f.Ordinal}])"
-                )
-            );
-            writer.Line(
-                arguments.Length == 0
-                    ? $"return new {view}(batch);"
-                    : $"return new {view}(batch, {arguments});"
-            );
+            writer.Line($"return new {view}(batch);");
         }
     }
 
@@ -78,19 +66,25 @@ internal static class TypedViewEmitter
         writer.Line("/// </summary>");
         using (writer.Block($"{context.Target.Accessibility} sealed partial class {view}"))
         {
-            string parameters = string.Join(
-                "",
-                System.Linq.Enumerable.Select(
-                    context.Plan.Fields,
-                    f => $", {ArrowTypes.ArrayClass(f.Leaf)} {ParameterName(f)}"
-                )
-            );
-            using (writer.Block($"internal {view}({Arrow}.RecordBatch batch{parameters})"))
+            // The only constructor validates: generated code is compiled into the consumer's
+            // assembly, so an internal constructor taking arrays would let any code there build a
+            // "validated" view over arrays from another batch, or null.
+            using (writer.Block($"internal {view}({Arrow}.RecordBatch batch)"))
             {
+                writer.Line(
+                    "if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));"
+                );
+                writer.Line(
+                    context.Plan.Fields.Count == 0
+                        ? $"{SourceNames.Identifier(context.Target.CompanionName)}.ResolveColumns(batch);"
+                        : $"int[] ordinals = {SourceNames.Identifier(context.Target.CompanionName)}.ResolveColumns(batch);"
+                );
                 writer.Line("Batch = batch;");
                 foreach (FieldPlan field in context.Plan.Fields)
                 {
-                    writer.Line($"{field.MemberIdentifier} = {ParameterName(field)};");
+                    writer.Line(
+                        $"{field.MemberIdentifier} = ({ArrowTypes.ArrayClass(field.Leaf)})batch.Column(ordinals[{field.Ordinal}]);"
+                    );
                 }
             }
 
@@ -113,7 +107,4 @@ internal static class TypedViewEmitter
             }
         }
     }
-
-    private static string ParameterName(FieldPlan field) =>
-        "column" + field.Ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 }

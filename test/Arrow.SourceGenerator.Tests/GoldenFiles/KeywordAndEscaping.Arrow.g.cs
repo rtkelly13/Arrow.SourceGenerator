@@ -219,7 +219,7 @@ namespace Golden.@namespace
             /// Checks every assumption the reader makes about <paramref name="batch"/> and returns the
             /// column ordinal of each field. Throws once, listing every problem found.
             /// </summary>
-            private static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
+            internal static int[] ResolveColumns(global::Apache.Arrow.RecordBatch batch)
             {
                 var ordinals = new int[3];
                 global::System.Collections.Generic.List<string>? errors = null;
@@ -285,8 +285,7 @@ namespace Golden.@namespace
             public static KeywordAndEscapingArrowView View(global::Apache.Arrow.RecordBatch batch)
             {
                 if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
-                int[] ordinals = ResolveColumns(batch);
-                return new KeywordAndEscapingArrowView(batch, (global::Apache.Arrow.Int32Array)batch.Column(ordinals[0]), (global::Apache.Arrow.StringArray)batch.Column(ordinals[1]), (global::Apache.Arrow.Int64Array)batch.Column(ordinals[2]));
+                return new KeywordAndEscapingArrowView(batch);
             }
 
             [global::System.Diagnostics.CodeAnalysis.DoesNotReturn]
@@ -402,12 +401,14 @@ namespace Golden.@namespace
         /// </summary>
         public sealed partial class KeywordAndEscapingArrowView
         {
-            internal KeywordAndEscapingArrowView(global::Apache.Arrow.RecordBatch batch, global::Apache.Arrow.Int32Array column0, global::Apache.Arrow.StringArray column1, global::Apache.Arrow.Int64Array column2)
+            internal KeywordAndEscapingArrowView(global::Apache.Arrow.RecordBatch batch)
             {
+                if (batch is null) throw new global::System.ArgumentNullException(nameof(batch));
+                int[] ordinals = KeywordAndEscapingArrow.ResolveColumns(batch);
                 Batch = batch;
-                @class = column0;
-                @event = column1;
-                Plain = column2;
+                @class = (global::Apache.Arrow.Int32Array)batch.Column(ordinals[0]);
+                @event = (global::Apache.Arrow.StringArray)batch.Column(ordinals[1]);
+                Plain = (global::Apache.Arrow.Int64Array)batch.Column(ordinals[2]);
             }
 
             /// <summary>The batch this view reads.</summary>
